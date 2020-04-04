@@ -6,11 +6,16 @@ import (
 	"strconv"
 )
 
-func StrToInt64(s string, i64 *int64) {
-	if i, ok := big.NewInt(0).SetString(s, 0); ok {
-		*i64 = i.Int64()
-	}
+func StrToUint64(s string) uint64 {
+	i, _ := strconv.ParseUint(s, 10, 64)
+	return i
 }
+
+func StrToInt64(s string) int64 {
+	i, _ := strconv.ParseInt(s, 10, 64)
+	return i
+}
+
 func StrToFloat64(s string) float64 {
 	if f, ok := big.NewFloat(0).SetString(s); ok {
 		f64, _ := f.Float64()
