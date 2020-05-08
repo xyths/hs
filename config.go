@@ -1,4 +1,4 @@
-package config
+package hs
 
 import (
 	"encoding/json"

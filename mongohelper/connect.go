@@ -26,3 +26,14 @@ func ConnectMongo(ctx context.Context, conf config.MongoConf) (*mongo.Database, 
 	}
 	return client.Database(conf.Database), nil
 }
+
+func IsDuplicateError(err error) bool {
+	e, ok := err.(mongo.WriteException)
+	if !ok {
+		return false
+	}
+	if e.WriteConcernError == nil && len(e.WriteErrors) == 1 && e.WriteErrors[0].Code == 11000 {
+		return true
+	}
+	return false
+}
