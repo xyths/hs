@@ -6,6 +6,7 @@ import (
 )
 
 type MongoConf struct {
+	// mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]
 	URI         string `json:"uri"`
 	Database    string `json:"database"`
 	MaxPoolSize uint64 `json:"maxPoolSize"`
@@ -15,6 +16,14 @@ type MongoConf struct {
 
 type MySQLConf struct {
 	URI string `json:"uri"`
+}
+
+type ExchangeConf struct {
+	Exchange string
+	Label    string
+	Currency string
+	Key      string
+	Secret   string
 }
 
 func ParseJsonConfig(filename string, config interface{}) error {
