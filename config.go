@@ -19,7 +19,7 @@ type MySQLConf struct {
 }
 
 type ExchangeConf struct {
-	Exchange string
+	Name     string
 	Label    string
 	Currency string
 	Key      string
