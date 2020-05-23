@@ -80,7 +80,7 @@ func TestClient_SubscribeCandlestick(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
 	// Set the callback handlers
-	err := client.SubscribeCandlestick(context.Background(), BTC_USDT, fmt.Sprintln(time.Now().Unix()),
+	client.SubscribeCandlestick(context.Background(), BTC_USDT, fmt.Sprintln(time.Now().Unix()),
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
 			if ok {
@@ -103,15 +103,13 @@ func TestClient_SubscribeCandlestick(t *testing.T) {
 				applogger.Warn("Unknown response: %v", resp)
 			}
 		})
-
-	require.NoError(t, err)
 }
 
 func TestClient_SubscribeOrder(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
 	// Set the callback handlers
-	err := client.SubscribeOrder(context.Background(), BTC_USDT, "a123",
+	client.SubscribeOrder(context.Background(), BTC_USDT, "a123",
 		func(resp interface{}) {
 			subResponse, ok := resp.(order.SubscribeOrderV2Response)
 			if ok {
@@ -133,15 +131,13 @@ func TestClient_SubscribeOrder(t *testing.T) {
 				applogger.Warn("Received unknown response: %v", resp)
 			}
 		})
-
-	require.NoError(t, err)
 }
 
 func TestClient_SubscribeAccountUpdate(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
 	// Set the callback handlers
-	err := client.SubscribeOrder(context.Background(), BTC_USDT, fmt.Sprintln(time.Now().Unix()),
+	client.SubscribeOrder(context.Background(), BTC_USDT, fmt.Sprintln(time.Now().Unix()),
 		func(resp interface{}) {
 			subResponse, ok := resp.(account.SubscribeAccountV2Response)
 			if ok {
@@ -150,6 +146,20 @@ func TestClient_SubscribeAccountUpdate(t *testing.T) {
 				applogger.Warn("Received unknown response: %v", resp)
 			}
 		})
+}
 
+func TestClient_GetPrice(t *testing.T) {
+	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	price, err := client.GetPrice(BTC_USDT)
 	require.NoError(t, err)
+	t.Logf("lastest BTC price is: %s", price)
+}
+
+func TestClient_GetSpotBalance(t *testing.T) {
+	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	balance, err := client.GetSpotBalance()
+	require.NoError(t, err)
+	for k, v := range (balance) {
+		t.Logf("%s:%s", k, v)
+	}
 }

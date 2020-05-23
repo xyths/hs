@@ -14,7 +14,7 @@ var (
 	MinAmount = map[string]float64{
 		"btcusdt": 0.0001,
 	}
-	MinTotal = map[string]int{
+	MinTotal = map[string]int64{
 		"btcusdt": 5,
 	}
 )

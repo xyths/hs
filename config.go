@@ -24,6 +24,7 @@ type ExchangeConf struct {
 	Currency string
 	Key      string
 	Secret   string
+	Host     string
 }
 
 func ParseJsonConfig(filename string, config interface{}) error {

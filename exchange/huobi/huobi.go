@@ -17,11 +17,12 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/xyths/hs/convert"
 	"log"
+	"strconv"
 )
 
 const (
-	Name        string = "huobi"
-	DefaultHost        = "api.huobi.me"
+	Name        = "huobi"
+	DefaultHost = "api.huobi.me"
 )
 
 type Client struct {
@@ -76,6 +77,50 @@ func (c *Client) GetSpotAccountId() (int64, error) {
 	return 0, nil
 }
 
+func (c *Client) GetPrice(symbol string) (decimal.Decimal, error) {
+	hb := new(client.MarketClient).Init(c.Host)
+
+	optionalRequest := getrequest.GetCandlestickOptionalRequest{Period: getrequest.MIN1, Size: 1}
+	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
+	if err != nil {
+		log.Println(err)
+		return decimal.NewFromFloat(0), err
+	}
+	for _, candlestick := range candlesticks {
+		log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
+			candlestick.Open, candlestick.High, candlestick.Low, candlestick.Close)
+		return candlestick.Close, nil
+	}
+
+	return decimal.NewFromFloat(0), nil
+}
+
+func (c *Client) GetSpotBalance() (map[string]decimal.Decimal, error) {
+	hb := new(client.AccountClient).Init(c.AccessKey, c.SecretKey, c.Host)
+	accountBalance, err := hb.GetAccountBalance(fmt.Sprintf("%d", c.SpotAccountId))
+	if err != nil {
+		return nil, err
+	}
+	balance := make(map[string]decimal.Decimal)
+	zero := decimal.NewFromInt(0)
+	for _, b := range accountBalance.List {
+		nb, err := decimal.NewFromString(b.Balance)
+		if err != nil {
+			log.Printf("error when parse balance: %s", err)
+			continue
+		}
+		if nb.Equal(zero) {
+			continue
+		}
+		if ob, ok := balance[b.Currency]; ok {
+			balance[b.Currency] = ob.Add(nb)
+		} else {
+			balance[b.Currency] = nb
+		}
+	}
+	return balance, nil
+}
+
 func (c *Client) PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	request := postrequest.PlaceOrderRequest{
@@ -94,7 +139,7 @@ func (c *Client) PlaceOrder(orderType, symbol, clientOrderId string, price, amou
 	}
 	switch resp.Status {
 	case "ok":
-		log.Printf("Place order successfully, order id: %s\n", resp.Data)
+		log.Printf("Place order successfully, order id: %s, clientOrderId: %s\n", resp.Data, clientOrderId)
 		return convert.StrToUint64(resp.Data), nil
 	case "error":
 		log.Printf("Place order error: %s\n", resp.ErrorMessage)
@@ -104,6 +149,22 @@ func (c *Client) PlaceOrder(orderType, symbol, clientOrderId string, price, amou
 		return 0, errors.New(resp.ErrorMessage)
 	}
 	return 0, errors.New("unknown status")
+}
+
+func (c *Client) CancelOrder(orderId uint64) (int, error) {
+	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
+	resp, err := hb.CancelOrderById(fmt.Sprintf("%d", orderId))
+	if err != nil {
+		return 0, err
+	}
+	if resp == nil {
+		return 0, nil
+	}
+	errorCode, err := strconv.Atoi(resp.ErrorCode)
+	if err != nil {
+		return 0, nil
+	}
+	return errorCode, errors.New(resp.ErrorMessage)
 }
 
 func (c *Client) SubscribeLast24hCandlestick(ctx context.Context, symbol, clientId string,
@@ -127,7 +188,7 @@ func (c *Client) SubscribeLast24hCandlestick(ctx context.Context, symbol, client
 }
 
 func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId string,
-	responseHandler websocketclientbase.ResponseHandler) error {
+	responseHandler websocketclientbase.ResponseHandler) {
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	hb.SetHandler(
 		// Connected handler
@@ -138,16 +199,14 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 
 	hb.Connect(true)
 
-	select {
-	case <-ctx.Done():
-		hb.UnSubscribe(symbol, getrequest.MIN1, clientId)
-		log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
-	}
-	return nil
+	<-ctx.Done()
+
+	hb.UnSubscribe(symbol, getrequest.MIN1, clientId)
+	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 }
 
 func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
-	responseHandler websocketclientbase.ResponseHandler) error {
+	responseHandler websocketclientbase.ResponseHandler) {
 	hb := new(orderwebsocketclient.SubscribeOrderWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 
 	hb.SetHandler(
@@ -157,21 +216,18 @@ func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
 				// Subscribe if authentication passed
 				hb.Subscribe(symbol, clientId)
 			} else {
-				applogger.Error("Authentication error, code: %d, message:%s", resp.Code, resp.Message)
+				log.Fatalf("Authentication error, code: %d, message:%s", resp.Code, resp.Message)
 			}
 		},
 		responseHandler)
 
 	hb.Connect(true)
 
-	select {
-	case <-ctx.Done():
-		hb.UnSubscribe(symbol, clientId)
-		log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
-	}
-	return nil
-}
+	<-ctx.Done()
 
+	hb.UnSubscribe(symbol, clientId)
+	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+}
 
 func (c *Client) SubscribeAccountUpdate(ctx context.Context, symbol, clientId string,
 	responseHandler websocketclientbase.ResponseHandler) error {
