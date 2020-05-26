@@ -10,10 +10,10 @@ type Trade struct {
 	OrderType string
 	Aggressor bool
 
-	Id          int64
-	TradeTime   int64
-	TradePrice  decimal.Decimal
-	TradeVolume decimal.Decimal
+	Id     int64           // trade id
+	Time   int64           // trade time
+	Price  decimal.Decimal // trade price
+	Volume decimal.Decimal // trade volume
 
 	TransactFee       decimal.Decimal
 	FeeDeduct         decimal.Decimal

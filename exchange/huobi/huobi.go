@@ -256,7 +256,7 @@ func (c *Client) SubscribeAccountUpdate(ctx context.Context, symbol, clientId st
 }
 
 func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId string,
-	responseHandler websocketclientbase.ResponseHandler) error {
+	responseHandler websocketclientbase.ResponseHandler) {
 	hb := new(orderwebsocketclient.SubscribeTradeClearWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 
 	hb.SetHandler(
@@ -277,6 +277,4 @@ func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId strin
 
 	hb.UnSubscribe(symbol, clientId)
 	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
-
-	return nil
 }
