@@ -247,10 +247,36 @@ func (c *Client) SubscribeAccountUpdate(ctx context.Context, symbol, clientId st
 
 	hb.Connect(true)
 
-	select {
-	case <-ctx.Done():
-		hb.UnSubscribe("1", clientId)
-		log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
-	}
+	<-ctx.Done()
+
+	hb.UnSubscribe("1", clientId)
+	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+
+	return nil
+}
+
+func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId string,
+	responseHandler websocketclientbase.ResponseHandler) error {
+	hb := new(orderwebsocketclient.SubscribeTradeClearWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
+
+	hb.SetHandler(
+		// Connected handler
+		func(resp *auth.WebSocketV2AuthenticationResponse) {
+			if resp.IsSuccess() {
+				// Subscribe if authentication passed
+				hb.Subscribe(symbol, clientId)
+			} else {
+				applogger.Error("Authentication error, code: %d, message:%s", resp.Code, resp.Message)
+			}
+		},
+		responseHandler)
+
+	hb.Connect(true)
+
+	<-ctx.Done()
+
+	hb.UnSubscribe(symbol, clientId)
+	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+
 	return nil
 }
