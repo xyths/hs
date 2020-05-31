@@ -21,7 +21,9 @@ func ConnectMongo(ctx context.Context, conf hs.MongoConf) (*mongo.Database, erro
 
 	client, err := mongo.Connect(ctx, option)
 	if err != nil {
-		_ = client.Disconnect(ctx)
+		if client != nil {
+			_ = client.Disconnect(ctx)
+		}
 		return nil, err
 	}
 	return client.Database(conf.Database), nil

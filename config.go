@@ -19,12 +19,12 @@ type MySQLConf struct {
 }
 
 type ExchangeConf struct {
-	Name     string
-	Label    string
-	Currency string
-	Key      string
-	Secret   string
-	Host     string
+	Name    string
+	Label   string
+	Symbols string // btc3l_usdt|btc3s_usdt
+	Key     string
+	Secret  string
+	Host    string
 }
 
 func ParseJsonConfig(filename string, config interface{}) error {

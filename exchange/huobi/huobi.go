@@ -102,14 +102,13 @@ func (c *Client) GetSpotBalance() (map[string]decimal.Decimal, error) {
 		return nil, err
 	}
 	balance := make(map[string]decimal.Decimal)
-	zero := decimal.NewFromInt(0)
 	for _, b := range accountBalance.List {
 		nb, err := decimal.NewFromString(b.Balance)
 		if err != nil {
 			log.Printf("error when parse balance: %s", err)
 			continue
 		}
-		if nb.Equal(zero) {
+		if nb.IsZero() {
 			continue
 		}
 		if ob, ok := balance[b.Currency]; ok {
