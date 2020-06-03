@@ -27,6 +27,22 @@ type ExchangeConf struct {
 	Host    string
 }
 
+type GridStrategyConf struct {
+	MaxPrice float64
+	MinPrice float64
+	Number   int
+	Total    float64
+}
+
+type RestGridStrategyConf struct {
+	MaxPrice  float64
+	MinPrice  float64
+	Number    int
+	Total     float64
+	Rebalance bool
+	Interval  string // sleep interval
+}
+
 func ParseJsonConfig(filename string, config interface{}) error {
 	configFile, err := os.Open(filename)
 	defer func() {

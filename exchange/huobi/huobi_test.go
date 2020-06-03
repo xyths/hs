@@ -159,7 +159,7 @@ func TestClient_GetSpotBalance(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 	balance, err := client.GetSpotBalance()
 	require.NoError(t, err)
-	for k, v := range (balance) {
+	for k, v := range balance {
 		t.Logf("%s:%s", k, v)
 	}
 }
