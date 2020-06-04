@@ -18,6 +18,10 @@ type MySQLConf struct {
 	URI string `json:"uri"`
 }
 
+type SQLiteConf struct {
+	Location string
+}
+
 type ExchangeConf struct {
 	Name    string
 	Label   string
