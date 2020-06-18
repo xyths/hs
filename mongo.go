@@ -1,13 +1,12 @@
-package mongohelper
+package hs
 
 import (
 	"context"
-	"github.com/xyths/hs"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConnectMongo(ctx context.Context, conf hs.MongoConf) (*mongo.Database, error) {
+func ConnectMongo(ctx context.Context, conf MongoConf) (*mongo.Database, error) {
 	option := options.Client().ApplyURI(conf.URI)
 	if conf.MaxPoolSize > 0 {
 		option.SetMaxPoolSize(conf.MaxPoolSize)
