@@ -47,6 +47,11 @@ type RestGridStrategyConf struct {
 	Interval  string // sleep interval
 }
 
+type HistoryConf struct {
+	Prefix   string
+	Interval string
+}
+
 func ParseJsonConfig(filename string, config interface{}) error {
 	configFile, err := os.Open(filename)
 	defer func() {
