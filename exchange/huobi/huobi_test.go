@@ -80,7 +80,7 @@ func TestClient_SubscribeCandlestick(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
 	// Set the callback handlers
-	client.SubscribeCandlestick(context.Background(), BTC_USDT, fmt.Sprintln(time.Now().Unix()),
+	client.SubscribeCandlestick(context.Background(), BTC_USDT, "1101",
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
 			if ok {

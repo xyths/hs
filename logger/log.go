@@ -1,106 +1,106 @@
-package log
+package logger
 
 import (
 	"go.uber.org/zap"
 	"os"
 )
 
-var Logger *zap.Logger
-var Sugar *zap.SugaredLogger
+var sugar *zap.SugaredLogger
 
 func init() {
+	var logger *zap.Logger
 	env := os.Getenv("GRID_ENV")
 	switch env {
 	case "PRODUCTION":
-		Logger, _ = zap.NewProduction()
+		logger, _ = zap.NewProduction()
 	case "DEVELOPMENT":
-		Logger, _ = zap.NewDevelopment()
+		logger, _ = zap.NewDevelopment()
 	default:
-		Logger, _ = zap.NewDevelopment()
+		logger, _ = zap.NewDevelopment()
 	}
-	Sugar = Logger.Sugar()
+	sugar = logger.Sugar()
 }
 
 func Debug(args ...interface{}) {
-	Sugar.Debug(args...)
+	sugar.Debug(args...)
 }
 
 func Debugf(template string, args ...interface{}) {
-	Sugar.Debugf(template, args...)
+	sugar.Debugf(template, args...)
 }
 
 func Debugw(msg string, keysAndValues ...interface{}) {
-	Sugar.Debugw(msg, keysAndValues...)
+	sugar.Debugw(msg, keysAndValues...)
 }
 
 func Info(args ...interface{}) {
-	Sugar.Info(args...)
+	sugar.Info(args...)
 }
 
 func Infof(template string, args ...interface{}) {
-	Sugar.Infof(template, args...)
+	sugar.Infof(template, args...)
 }
 
 func Infow(msg string, keysAndValues ...interface{}) {
-	Sugar.Infow(msg, keysAndValues...)
+	sugar.Infow(msg, keysAndValues...)
 }
 
 func Warn(args ...interface{}) {
-	Sugar.Warn(args...)
+	sugar.Warn(args...)
 }
 
 func Warnf(template string, args ...interface{}) {
-	Sugar.Warnf(template, args...)
+	sugar.Warnf(template, args...)
 }
 
 func Warnw(msg string, keysAndValues ...interface{}) {
-	Sugar.Warnw(msg, keysAndValues...)
+	sugar.Warnw(msg, keysAndValues...)
 }
 
 func Error(args ...interface{}) {
-	Sugar.Error(args...)
+	sugar.Error(args...)
 }
 
 func Errorf(template string, args ...interface{}) {
-	Sugar.Errorf(template, args...)
+	sugar.Errorf(template, args...)
 }
 
 func Errorw(msg string, keysAndValues ...interface{}) {
-	Sugar.Errorw(msg, keysAndValues...)
+	sugar.Errorw(msg, keysAndValues...)
 }
 
 func DPanic(args ...interface{}) {
-	Sugar.DPanic(args...)
+	sugar.DPanic(args...)
 }
 
 func DPanicf(template string, args ...interface{}) {
-	Sugar.DPanicf(template, args...)
+	sugar.DPanicf(template, args...)
 }
 
 func DPanicw(msg string, keysAndValues ...interface{}) {
-	Sugar.DPanicw(msg, keysAndValues...)
+	sugar.DPanicw(msg, keysAndValues...)
 }
 
 func Panic(args ...interface{}) {
-	Sugar.Panic(args...)
+	sugar.Panic(args...)
 }
 
 func Panicf(template string, args ...interface{}) {
-	Sugar.Panicf(template, args...)
+	sugar.Panicf(template, args...)
 }
 
 func Panicw(msg string, keysAndValues ...interface{}) {
-	Sugar.Panicw(msg, keysAndValues...)
+	sugar.Panicw(msg, keysAndValues...)
 }
 
 func Fatal(args ...interface{}) {
-	Sugar.Fatal(args...)
+	sugar.Fatal(args...)
 }
 
 func Fatalf(template string, args ...interface{}) {
-	Sugar.Fatalf(template, args...)
+	sugar.Fatalf(template, args...)
 }
 
 func Fatalw(msg string, keysAndValues ...interface{}) {
-	Sugar.Fatalw(msg, keysAndValues...)
+	sugar.Fatalw(msg, keysAndValues...)
 }

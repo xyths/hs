@@ -151,20 +151,24 @@ func (c *Client) PlaceOrder(orderType, symbol, clientOrderId string, price, amou
 	return 0, errors.New("unknown status")
 }
 
-func (c *Client) CancelOrder(orderId uint64) (int, error) {
+func (c *Client) CancelOrder(orderId uint64) error {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	resp, err := hb.CancelOrderById(fmt.Sprintf("%d", orderId))
 	if err != nil {
-		return 0, err
+		return err
 	}
 	if resp == nil {
-		return 0, nil
+		return nil
 	}
 	errorCode, err := strconv.Atoi(resp.ErrorCode)
 	if err != nil {
-		return 0, nil
+		return nil
 	}
-	return errorCode, errors.New(resp.ErrorMessage)
+	if errorCode == 0 {
+		return nil
+	} else {
+		return errors.New(resp.ErrorMessage)
+	}
 }
 
 func (c *Client) SubscribeLast24hCandlestick(ctx context.Context, symbol, clientId string,
