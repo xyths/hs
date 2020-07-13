@@ -23,13 +23,20 @@ type SQLiteConf struct {
 }
 
 type ExchangeConf struct {
-	Name    string
+	Name    string // see const below
 	Label   string
 	Symbols []string
 	Key     string
 	Secret  string
 	Host    string
 }
+
+const (
+	GateIO = "gate"
+	MXC    = "mxc"
+	OKEx   = "okex"
+	Huobi  = "huobi"
+)
 
 type GridStrategyConf struct {
 	MaxPrice float64

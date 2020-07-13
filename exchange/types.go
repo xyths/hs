@@ -14,10 +14,3 @@ type Ticker struct {
 type Candle struct {
 	Tickers []Ticker
 }
-
-const (
-	GateIO = "gate"
-	MXC    = "mxc"
-	OKEx   = "okex"
-	Huobi  = "huobi"
-)
