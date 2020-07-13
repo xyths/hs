@@ -18,6 +18,7 @@ import (
 	"github.com/xyths/hs/convert"
 	"log"
 	"strconv"
+	"time"
 )
 
 const (
@@ -192,6 +193,29 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 	hb.SetHandler(
 		// Connected handler
 		func() {
+			hb.Subscribe(symbol, getrequest.MIN1, clientId)
+		},
+		responseHandler)
+
+	hb.Connect(true)
+
+	<-ctx.Done()
+
+	hb.UnSubscribe(symbol, getrequest.MIN1, clientId)
+	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+}
+
+const CandlestickReqMaxLength = 300
+
+func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string,
+	responseHandler websocketclientbase.ResponseHandler) {
+	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
+	now := time.Now()
+	start := now.Add(-CandlestickReqMaxLength * time.Minute)
+	hb.SetHandler(
+		// Connected handler
+		func() {
+			hb.Request(symbol, getrequest.MIN1, start.Unix(), now.Unix(), clientId)
 			hb.Subscribe(symbol, getrequest.MIN1, clientId)
 		},
 		responseHandler)

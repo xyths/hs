@@ -105,6 +105,36 @@ func TestClient_SubscribeCandlestick(t *testing.T) {
 		})
 }
 
+func TestClient_SubscribeCandlestickWithReq(t *testing.T) {
+	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+
+	// Set the callback handlers
+	//fmt.Sprintln(time.Now().Unix())
+	client.SubscribeCandlestickWithReq(context.Background(), BTC_USDT, "1111",
+		func(resp interface{}) {
+			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
+			if ok {
+				if &candlestickResponse != nil {
+					if candlestickResponse.Tick != nil {
+						t := candlestickResponse.Tick
+						applogger.Info("Candlestick update, id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
+							t.Id, t.Count, t.Vol, t.Open, t.High, t.Low, t.Close)
+					}
+
+					if candlestickResponse.Data != nil {
+						for i, t := range candlestickResponse.Data {
+							applogger.Info("Candlestick data[%d], id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
+								i, t.Id, t.Count, t.Vol, t.Open, t.High, t.Low, t.Close)
+
+						}
+					}
+				}
+			} else {
+				applogger.Warn("Unknown response: %v", resp)
+			}
+		})
+}
+
 func TestClient_SubscribeOrder(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
