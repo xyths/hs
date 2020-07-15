@@ -4,10 +4,12 @@ import (
 	"context"
 	"github.com/huobirdcenter/huobi_golang/pkg/client/websocketclientbase"
 	"github.com/shopspring/decimal"
+	"time"
 )
 
 type RestAPI interface {
 	GetSpotBalance() (map[string]decimal.Decimal, error)
+	GetCandle(symbol, clientId, period string, from, to time.Time) (Candle, error)
 
 	PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error)
 	CancelOrder(orderId uint64) error

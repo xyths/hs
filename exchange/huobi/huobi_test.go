@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/huobirdcenter/huobi_golang/logging/applogger"
+	"github.com/huobirdcenter/huobi_golang/pkg/getrequest"
 	"github.com/huobirdcenter/huobi_golang/pkg/response/account"
 	"github.com/huobirdcenter/huobi_golang/pkg/response/market"
 	"github.com/huobirdcenter/huobi_golang/pkg/response/order"
@@ -76,6 +77,15 @@ func TestClient_SubscribeLast24hCandlestick(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestClient_GetCandlestick(t *testing.T) {
+	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	to := time.Now()
+	from := to.Add(-CandlestickReqMaxLength * time.Minute)
+	candle, err := client.GetCandle(BTC_USDT, "1101", getrequest.MIN1, from, to)
+	require.NoError(t, err)
+	t.Logf("candle length: %d", candle.Length())
+}
+
 func TestClient_SubscribeCandlestick(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
@@ -87,13 +97,13 @@ func TestClient_SubscribeCandlestick(t *testing.T) {
 				if &candlestickResponse != nil {
 					if candlestickResponse.Tick != nil {
 						t := candlestickResponse.Tick
-						applogger.Info("Candlestick update, id: %d, count: %v, volume: %v, OHLC[%v-%v-%v-%v]",
+						applogger.Info("Candlestick update, id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
 							t.Id, t.Count, t.Vol, t.Open, t.High, t.Low, t.Close)
 					}
 
 					if candlestickResponse.Data != nil {
-						for i, t := range (candlestickResponse.Data) {
-							applogger.Info("Candlestick data[%d], id: %d, count: %v, volume: %v, OHLC[%v-%v-%v-%v]",
+						for i, t := range candlestickResponse.Data {
+							applogger.Info("Candlestick data[%d], id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
 								i, t.Id, t.Count, t.Vol, t.Open, t.High, t.Low, t.Close)
 
 						}

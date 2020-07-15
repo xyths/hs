@@ -14,8 +14,11 @@ import (
 	"github.com/huobirdcenter/huobi_golang/pkg/postrequest"
 	"github.com/huobirdcenter/huobi_golang/pkg/response/account"
 	"github.com/huobirdcenter/huobi_golang/pkg/response/auth"
+	"github.com/huobirdcenter/huobi_golang/pkg/response/market"
 	"github.com/shopspring/decimal"
+	"github.com/xyths/hs"
 	"github.com/xyths/hs/convert"
+	"github.com/xyths/hs/logger"
 	"log"
 	"strconv"
 	"time"
@@ -119,6 +122,55 @@ func (c *Client) GetSpotBalance() (map[string]decimal.Decimal, error) {
 		}
 	}
 	return balance, nil
+}
+
+func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) (hs.Candle, error) {
+	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
+	ch := make(chan hs.Candle)
+	hb.SetHandler(
+		// Connected handler
+		func() {
+			hb.Request(symbol, period, from.Unix(), to.Unix(), clientId)
+		},
+		func(resp interface{}) {
+			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
+			if ok {
+				if &candlestickResponse != nil {
+					if candlestickResponse.Tick != nil {
+						t := candlestickResponse.Tick
+						logger.Infof("Candlestick update, id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
+							t.Id, t.Count, t.Vol, t.Open, t.High, t.Low, t.Close)
+					}
+
+					if candlestickResponse.Data != nil {
+						candle := hs.NewCandle(300)
+						for i, tick := range candlestickResponse.Data {
+							logger.Infof("Candlestick data[%d], id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
+								i, tick.Id, tick.Count, tick.Vol, tick.Open, tick.High, tick.Low, tick.Close)
+							ticker := hs.Ticker{
+								Timestamp: tick.Id,
+							}
+							ticker.Open, _ = tick.Open.Float64()
+							ticker.High, _ = tick.High.Float64()
+							ticker.Low, _ = tick.Low.Float64()
+							ticker.Close, _ = tick.Close.Float64()
+							ticker.Volume, _ = tick.Vol.Float64()
+							candle.Append(ticker)
+						}
+						ch <- candle
+						return
+					}
+				}
+			} else {
+				applogger.Warn("Unknown response: %v", resp)
+			}
+			ch <- hs.Candle{}
+			return
+		})
+
+	hb.Connect(true)
+
+	return <-ch, nil
 }
 
 func (c *Client) PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
