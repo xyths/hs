@@ -77,13 +77,21 @@ func TestClient_SubscribeLast24hCandlestick(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestClient_GetCandlestick(t *testing.T) {
+func TestClient_GetCandle(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
-	to := time.Now()
-	from := to.Add(-CandlestickReqMaxLength * time.Minute)
-	candle, err := client.GetCandle(BTC_USDT, "1101", getrequest.MIN1, from, to)
-	require.NoError(t, err)
-	t.Logf("candle length: %d", candle.Length())
+
+	t.Run("300 candles till now", func(t *testing.T) {
+		to := time.Now()
+		from := to.Add(-1 * 10 * CandlestickReqMaxLength * time.Minute)
+		candle, err := client.GetCandle(BTC_USDT, "1101", getrequest.MIN1, from, to)
+		require.NoError(t, err)
+		t.Logf("candle length: %d", candle.Length())
+		for i := 1; i < candle.Length(); i++ {
+			if candle.Timestamp[i-1] <= candle.Timestamp[i] {
+				t.Errorf("Timestamp[%d] (%d) <= [%d] (%d)", i-1, candle.Timestamp[i-1], i, candle.Timestamp[i])
+			}
+		}
+	})
 }
 
 func TestClient_SubscribeCandlestick(t *testing.T) {

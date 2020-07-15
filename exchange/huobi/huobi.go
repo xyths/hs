@@ -21,6 +21,7 @@ import (
 	"github.com/xyths/hs/logger"
 	"log"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -125,28 +126,43 @@ func (c *Client) GetSpotBalance() (map[string]decimal.Decimal, error) {
 }
 
 func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) (hs.Candle, error) {
+	timestamps := c.splitTimestamp(period, from, to)
+	if len(timestamps) <= 1 {
+		return hs.Candle{}, errors.New("'from' need before 'to'")
+	}
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
-	ch := make(chan hs.Candle)
+	ch := make(chan hs.Candle, len(timestamps)-1)
+	candles := hs.NewCandle(CandlestickReqMaxLength * (len(timestamps) - 1))
+	go func() {
+		for i := 0; i < len(timestamps)-1; i++ {
+			candle := <-ch
+			candles.Add(candle)
+		}
+	}()
+	var wg sync.WaitGroup
 	hb.SetHandler(
 		// Connected handler
 		func() {
-			hb.Request(symbol, period, from.Unix(), to.Unix(), clientId)
+			for i := 1; i < len(timestamps); i++ {
+				hb.Request(symbol, period, timestamps[i-1], timestamps[i], clientId)
+				wg.Add(1)
+				time.Sleep(time.Second / 10)
+			}
 		},
 		func(resp interface{}) {
+			defer wg.Done()
 			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
 			if ok {
 				if &candlestickResponse != nil {
 					if candlestickResponse.Tick != nil {
 						t := candlestickResponse.Tick
-						logger.Infof("Candlestick update, id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
+						logger.Sugar.Infof("Candlestick update, id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
 							t.Id, t.Count, t.Vol, t.Open, t.High, t.Low, t.Close)
 					}
 
 					if candlestickResponse.Data != nil {
-						candle := hs.NewCandle(300)
-						for i, tick := range candlestickResponse.Data {
-							logger.Infof("Candlestick data[%d], id: %d, count: %v, volume: %v, OHLC[%v, %v, %v, %v]",
-								i, tick.Id, tick.Count, tick.Vol, tick.Open, tick.High, tick.Low, tick.Close)
+						candle := hs.NewCandle(CandlestickReqMaxLength)
+						for _, tick := range candlestickResponse.Data {
 							ticker := hs.Ticker{
 								Timestamp: tick.Id,
 							}
@@ -169,8 +185,11 @@ func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) 
 		})
 
 	hb.Connect(true)
+	defer hb.UnSubscribe(symbol, period, clientId)
 
-	return <-ch, nil
+	wg.Wait()
+
+	return candles, nil
 }
 
 func (c *Client) PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
@@ -356,4 +375,39 @@ func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId strin
 
 	hb.UnSubscribe(symbol, clientId)
 	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+}
+
+func (c Client) splitTimestamp(period string, from, to time.Time) (timestamps []int64) {
+	var d time.Duration
+	switch period {
+	case getrequest.MIN1:
+		d = time.Minute
+	case getrequest.MIN5:
+		d = time.Minute * 5
+	case getrequest.MIN15:
+		d = time.Minute * 15
+	case getrequest.MIN30:
+		d = time.Minute * 30
+	case getrequest.MIN60:
+		d = time.Hour
+	case getrequest.HOUR4:
+		d = time.Hour * 4
+	case getrequest.DAY1:
+		d = time.Hour * 24
+	case getrequest.MON1:
+		d = time.Hour * 24 * 30
+	case getrequest.WEEK1:
+		d = time.Hour * 24 * 7
+	case getrequest.YEAR1:
+		d = time.Hour * 24 * 365
+	default:
+		d = time.Hour * 24
+	}
+
+	for t := from; t.Before(to); t = t.Add(d * CandlestickReqMaxLength) {
+		timestamps = append(timestamps, t.Unix())
+	}
+	timestamps = append(timestamps, to.Unix())
+
+	return
 }
