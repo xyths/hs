@@ -2,6 +2,7 @@ package hs
 
 import (
 	"encoding/json"
+	"github.com/xyths/hs/broadcast"
 	"os"
 )
 
@@ -30,6 +31,8 @@ type ExchangeConf struct {
 	Secret  string
 	Host    string
 }
+
+type BroadcastConf = broadcast.Config
 
 const (
 	GateIO = "gate"
