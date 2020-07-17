@@ -3,7 +3,7 @@ package broadcast
 import "fmt"
 
 type Broadcaster interface {
-	Broadcast(labels []string, symbol, direction, price, amount, total, profit string)
+	Broadcast(labels []string, symbol, time, direction, price, amount, total, profit string)
 }
 
 const (
