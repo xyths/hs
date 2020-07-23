@@ -133,13 +133,15 @@ func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) 
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	ch := make(chan hs.Candle, len(timestamps)-1)
 	candles := hs.NewCandle(CandlestickReqMaxLength * (len(timestamps) - 1))
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for i := 0; i < len(timestamps)-1; i++ {
 			candle := <-ch
 			candles.Add(candle)
 		}
 	}()
-	var wg sync.WaitGroup
 	hb.SetHandler(
 		// Connected handler
 		func() {
