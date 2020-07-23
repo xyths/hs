@@ -55,6 +55,15 @@ func (c *Candle) Add(other Candle) {
 	if c.Capacity == 0 {
 		return
 	}
+	if c.Length() >= 1 && other.Length() >= 1 && other.Timestamp[other.Length()-1] == c.Timestamp[0] {
+		// remove the tail
+		other.Timestamp = other.Timestamp[:other.Length()-1]
+		other.Open = other.Open[:other.Length()-1]
+		other.High = other.High[:other.Length()-1]
+		other.Low = other.Low[:other.Length()-1]
+		other.Close = other.Close[:other.Length()-1]
+		other.Volume = other.Volume[:other.Length()-1]
+	}
 	l1 := c.Length()
 	l2 := other.Length()
 
