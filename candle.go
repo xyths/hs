@@ -20,14 +20,6 @@ type Candle struct {
 }
 
 func NewCandle(capacity int) Candle {
-	//c := dataframe.New(
-	//	series.New([]int64{}, series.Int, "Timestamp"),
-	//	series.New([]float64{}, series.Float, "Open"),
-	//	series.New([]float64{}, series.Float, "High"),
-	//	series.New([]float64{}, series.Float, "Low"),
-	//	series.New([]float64{}, series.Float, "Close"),
-	//	series.New([]float64{}, series.Float, "Volume"),
-	//)
 	return Candle{Capacity: capacity}
 }
 
@@ -39,23 +31,21 @@ func (c *Candle) Append(ticker Ticker) {
 	if c.Capacity == 0 {
 		return
 	}
-	pos := c.Length()
-	if c.Length() >= c.Capacity {
-		pos = c.Capacity - 1
-	}
-	c.Timestamp = append([]int64{ticker.Timestamp}, c.Timestamp[0:pos]...)
-	c.Open = append([]float64{ticker.Open}, c.Open[0:pos]...)
-	c.High = append([]float64{ticker.High}, c.High[0:pos]...)
-	c.Low = append([]float64{ticker.Low}, c.Low[0:pos]...)
-	c.Close = append([]float64{ticker.Close}, c.Close[0:pos]...)
-	c.Volume = append([]float64{ticker.Volume}, c.Volume[0:pos]...)
+	c.Timestamp = append(c.Timestamp, ticker.Timestamp)
+	c.Open = append(c.Open, ticker.Open)
+	c.High = append(c.High, ticker.High)
+	c.Low = append(c.Low, ticker.Low)
+	c.Close = append(c.Close, ticker.Close)
+	c.Volume = append(c.Volume, ticker.Volume)
+
+	c.Truncate()
 }
 
 func (c *Candle) Add(other Candle) {
 	if c.Capacity == 0 {
 		return
 	}
-	if c.Length() >= 1 && other.Length() >= 1 && other.Timestamp[other.Length()-1] == c.Timestamp[0] {
+	if c.Length() >= 1 && other.Length() >= 1 && other.Timestamp[0] == c.Timestamp[c.Length()-1] {
 		// remove the tail
 		l := other.Length() - 1
 		other.Timestamp = other.Timestamp[:l]
@@ -65,30 +55,26 @@ func (c *Candle) Add(other Candle) {
 		other.Close = other.Close[:l]
 		other.Volume = other.Volume[:l]
 	}
-	l1 := c.Length()
-	l2 := other.Length()
 
-	if l1+l2 <= c.Capacity {
-		c.Timestamp = append(other.Timestamp, c.Timestamp...)
-		c.Open = append(other.Open, c.Open...)
-		c.High = append(other.High, c.High...)
-		c.Low = append(other.Low, c.Low...)
-		c.Close = append(other.Close, c.Close...)
-		c.Volume = append(other.Volume, c.Volume...)
-	} else if l2 <= c.Capacity {
-		pos := c.Capacity - l2
-		c.Timestamp = append(other.Timestamp, c.Timestamp[0:pos]...)
-		c.Open = append(other.Open, c.Open[0:pos]...)
-		c.High = append(other.High, c.High[0:pos]...)
-		c.Low = append(other.Low, c.Low[0:pos]...)
-		c.Close = append(other.Close, c.Close[0:pos]...)
-		c.Volume = append(other.Volume, c.Volume[0:pos]...)
-	} else {
-		c.Timestamp = other.Timestamp[0:c.Capacity]
-		c.Open = other.Open[0:c.Capacity]
-		c.High = other.High[0:c.Capacity]
-		c.Low = other.Low[0:c.Capacity]
-		c.Close = other.Close[0:c.Capacity]
-		c.Volume = other.Volume[0:c.Capacity]
+	c.Timestamp = append(c.Timestamp, other.Timestamp...)
+	c.Open = append(c.Open, other.Open...)
+	c.High = append(c.High, other.High...)
+	c.Low = append(c.Low, other.Low...)
+	c.Close = append(c.Close, other.Close...)
+	c.Volume = append(c.Volume, other.Volume...)
+
+	c.Truncate()
+}
+
+func (c *Candle) Truncate() {
+	if c.Length() <= c.Capacity {
+		return
 	}
+	pos := c.Length() - c.Capacity
+	c.Timestamp = c.Timestamp[pos:]
+	c.Open = c.Open[pos:]
+	c.High = c.High[pos:]
+	c.Low = c.Low[pos:]
+	c.Close = c.Close[pos:]
+	c.Volume = c.Volume[pos:]
 }
