@@ -182,7 +182,7 @@ func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) 
 
 					if candlestickResponse.Data != nil {
 						candle := hs.NewCandle(CandlestickReqMaxLength)
-						for i := len(candlestickResponse.Data) - 1; i >= 0; i-- {
+						for i := 0; i < len(candlestickResponse.Data); i++ {
 							tick := candlestickResponse.Data[i]
 							ticker := hs.Ticker{
 								Timestamp: tick.Id,
