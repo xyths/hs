@@ -20,6 +20,7 @@ import (
 	"github.com/xyths/hs/convert"
 	"github.com/xyths/hs/logger"
 	"log"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -125,6 +126,18 @@ func (c *Client) GetSpotBalance() (map[string]decimal.Decimal, error) {
 	return balance, nil
 }
 
+type CandleSlice []hs.Candle
+
+func (cs CandleSlice) Len() int {
+	return len(cs)
+}
+func (cs CandleSlice) Swap(i, j int) {
+	cs[i], cs[j] = cs[j], cs[i]
+}
+func (cs CandleSlice) Less(i, j int) bool {
+	return cs[i].Timestamp[0] < cs[j].Timestamp[0]
+}
+
 func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) (hs.Candle, error) {
 	timestamps := c.splitTimestamp(period, from, to)
 	if len(timestamps) <= 1 {
@@ -137,9 +150,14 @@ func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		var cs CandleSlice
 		for i := 0; i < len(timestamps)-1; i++ {
 			candle := <-ch
-			candles.Add(candle)
+			cs = append(cs, candle)
+		}
+		sort.Sort(cs)
+		for _, c := range cs {
+			candles.Add(c)
 		}
 	}()
 	hb.SetHandler(
