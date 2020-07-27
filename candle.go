@@ -46,14 +46,13 @@ func (c *Candle) Add(other Candle) {
 		return
 	}
 	if c.Length() >= 1 && other.Length() >= 1 && other.Timestamp[0] == c.Timestamp[c.Length()-1] {
-		// remove the tail
-		l := other.Length() - 1
-		other.Timestamp = other.Timestamp[:l]
-		other.Open = other.Open[:l]
-		other.High = other.High[:l]
-		other.Low = other.Low[:l]
-		other.Close = other.Close[:l]
-		other.Volume = other.Volume[:l]
+		// remove the duplicate item
+		other.Timestamp = other.Timestamp[1:]
+		other.Open = other.Open[1:]
+		other.High = other.High[1:]
+		other.Low = other.Low[1:]
+		other.Close = other.Close[1:]
+		other.Volume = other.Volume[1:]
 	}
 
 	c.Timestamp = append(c.Timestamp, other.Timestamp...)
