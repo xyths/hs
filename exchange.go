@@ -25,6 +25,13 @@ type Exchange interface {
 	WsAPI
 }
 
+type OrderType = int
+
+const (
+	Buy  OrderType = 1
+	Sell           = -1
+)
+
 type OrderStatus = int
 
 const (
@@ -38,7 +45,7 @@ type Order struct {
 	Id       uint64
 	ClientId string
 
-	Type          int
+	Type          OrderType
 	Symbol        string
 	InitialPrice  decimal.Decimal
 	InitialAmount decimal.Decimal
