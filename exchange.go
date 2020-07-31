@@ -8,6 +8,8 @@ import (
 )
 
 type RestAPI interface {
+	PricePrecision(symbol string) int32
+	AmountPrecision(symbol string) int32
 	GetSpotBalance() (map[string]decimal.Decimal, error)
 	GetCandle(symbol, clientId, period string, from, to time.Time) (Candle, error)
 

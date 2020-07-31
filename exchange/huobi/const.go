@@ -5,10 +5,10 @@ const (
 )
 
 var (
-	PricePrecision = map[string]int{
+	PricePrecision = map[string]int32{
 		"btcusdt": 2,
 	}
-	AmountPrecision = map[string]int{
+	AmountPrecision = map[string]int32{
 		"btcusdt": 5,
 	}
 	MinAmount = map[string]float64{

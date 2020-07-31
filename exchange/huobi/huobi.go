@@ -83,6 +83,14 @@ func (c *Client) GetSpotAccountId() (int64, error) {
 	return 0, nil
 }
 
+func (c *Client) PricePrecision(symbol string) int32 {
+	return PricePrecision[symbol]
+}
+
+func (c *Client) AmountPrecision(symbol string) int32 {
+	return AmountPrecision[symbol]
+}
+
 func (c *Client) GetPrice(symbol string) (decimal.Decimal, error) {
 	hb := new(client.MarketClient).Init(c.Host)
 
