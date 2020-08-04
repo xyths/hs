@@ -291,13 +291,14 @@ func (c *Client) SubscribeLast24hCandlestick(ctx context.Context, symbol, client
 	return nil
 }
 
-func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId string,
+func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration,
 	responseHandler websocketclientbase.ResponseHandler) {
+	periodStr := getPeriodString(period)
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	hb.SetHandler(
 		// Connected handler
 		func() {
-			hb.Subscribe(symbol, getrequest.MIN1, clientId)
+			hb.Subscribe(symbol, periodStr, clientId)
 		},
 		responseHandler)
 
@@ -305,7 +306,7 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 
 	<-ctx.Done()
 
-	hb.UnSubscribe(symbol, getrequest.MIN1, clientId)
+	hb.UnSubscribe(symbol, periodStr, clientId)
 	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 }
 
@@ -315,32 +316,7 @@ func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, client
 	responseHandler websocketclientbase.ResponseHandler) {
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	now := time.Now()
-	//var start time.Time
-	var periodStr string
-	switch period {
-	case hs.MIN1:
-		periodStr = getrequest.MIN1
-	case hs.MIN5:
-		periodStr = getrequest.MIN5
-	case hs.MIN15:
-		periodStr = getrequest.MIN15
-	case hs.MIN30:
-		periodStr = getrequest.MIN30
-	case hs.HOUR1:
-		periodStr = getrequest.MIN60
-	case hs.HOUR4:
-		periodStr = getrequest.HOUR4
-	case hs.DAY1:
-		periodStr = getrequest.DAY1
-	case hs.MON1:
-		periodStr = getrequest.MON1
-	case hs.WEEK1:
-		periodStr = getrequest.WEEK1
-	case hs.YEAR1:
-		periodStr = getrequest.YEAR1
-	default:
-		logger.Sugar.Fatalf("bad period")
-	}
+	periodStr := getPeriodString(period)
 	start := now.Add(-CandlestickReqMaxLength * period)
 	hb.SetHandler(
 		// Connected handler
@@ -464,5 +440,33 @@ func (c Client) splitTimestamp(period string, from, to time.Time) (timestamps []
 	}
 	timestamps = append(timestamps, to.Unix())
 
+	return
+}
+
+func getPeriodString(period time.Duration) (periodStr string) {
+	switch period {
+	case hs.MIN1:
+		periodStr = getrequest.MIN1
+	case hs.MIN5:
+		periodStr = getrequest.MIN5
+	case hs.MIN15:
+		periodStr = getrequest.MIN15
+	case hs.MIN30:
+		periodStr = getrequest.MIN30
+	case hs.HOUR1:
+		periodStr = getrequest.MIN60
+	case hs.HOUR4:
+		periodStr = getrequest.HOUR4
+	case hs.DAY1:
+		periodStr = getrequest.DAY1
+	case hs.MON1:
+		periodStr = getrequest.MON1
+	case hs.WEEK1:
+		periodStr = getrequest.WEEK1
+	case hs.YEAR1:
+		periodStr = getrequest.YEAR1
+	default:
+		logger.Sugar.Fatalf("bad period")
+	}
 	return
 }
