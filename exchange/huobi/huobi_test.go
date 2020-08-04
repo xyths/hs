@@ -128,7 +128,7 @@ func TestClient_SubscribeCandlestickWithReq(t *testing.T) {
 
 	// Set the callback handlers
 	//fmt.Sprintln(time.Now().Unix())
-	client.SubscribeCandlestickWithReq(context.Background(), BTC_USDT, "1111",
+	client.SubscribeCandlestickWithReq(context.Background(), BTC_USDT, "1111", time.Minute,
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
 			if ok {
