@@ -21,6 +21,7 @@ type RestAPI interface {
 
 type WsAPI interface {
 	SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler websocketclientbase.ResponseHandler)
+	SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler websocketclientbase.ResponseHandler)
 }
 
 // common exchange interface, for all symbols, all crypto-exchanges
