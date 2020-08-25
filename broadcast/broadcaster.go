@@ -4,6 +4,7 @@ import "fmt"
 
 type Broadcaster interface {
 	Broadcast(labels []string, symbol, time, direction, price, amount, total, profit string)
+	SendText(message string) error
 }
 
 const (

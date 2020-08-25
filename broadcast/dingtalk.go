@@ -36,3 +36,7 @@ func (d *DingTalk) Broadcast(labels []string, symbol, time, direction, price, am
 		}
 	}()
 }
+
+func (d *DingTalk) SendText(message string) error {
+	return d.bot.Text(message)
+}
