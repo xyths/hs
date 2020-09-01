@@ -13,10 +13,10 @@ type RestAPIExchange interface {
 	AmountPrecision(symbol string) int32
 	MinAmount(symbol string) decimal.Decimal
 	MinTotal(symbol string) decimal.Decimal
-
+	
 	SpotAvailableBalance() (map[string]decimal.Decimal, error)
 	LastPrice(symbol string) (decimal.Decimal, error)
-	Candle(symbol, period string, size int) (Candle, error)
+	Candle(symbol string, period time.Duration, size int) (Candle, error)
 
 	//PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error)
 	Buy(symbol, orderType, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)

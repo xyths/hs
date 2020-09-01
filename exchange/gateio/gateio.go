@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
@@ -131,7 +132,7 @@ func (g *GateIO) OrderBook(symbol string) (ResponseOrderBook, error) {
 }
 
 // 获取Candle
-func (g *GateIO) Candle(symbol, clientId, period string, size int) (candle hs.Candle, err error) {
+func (g *GateIO) Candle(symbol string, period time.Duration, size int) (candle hs.Candle, err error) {
 	//url := fmt.Sprintf("/candlestick2/%s?group_sec=%d&range_hour=%d", currencyPair, groupSec, rangeHour)
 	//param := ""
 	//
