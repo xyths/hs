@@ -1,5 +1,7 @@
 package huobi
 
+import "github.com/shopspring/decimal"
+
 const (
 	BTC_USDT = "btcusdt"
 )
@@ -14,7 +16,7 @@ var (
 	MinAmount = map[string]float64{
 		"btcusdt": 0.0001,
 	}
-	MinTotal = map[string]int64{
+	MinTotal = map[string]float64{
 		"btcusdt": 5,
 	}
 )
@@ -35,3 +37,19 @@ const (
 	OrderTypeBuyStopLimitFok  = "buy-stop-limit-fok"
 	OrderTypeSellStopLimitFok = "sell-stop-limit-fok"
 )
+
+func (c Client) PricePrecision(symbol string) int32 {
+	return PricePrecision[symbol]
+}
+
+func (c Client) AmountPrecision(symbol string) int32 {
+	return AmountPrecision[symbol]
+}
+
+func (c Client) MinAmount(symbol string) decimal.Decimal {
+	return decimal.NewFromFloat(MinAmount[symbol])
+}
+
+func (c Client) MinTotal(symbol string) decimal.Decimal {
+	return decimal.NewFromFloat(MinTotal[symbol])
+}

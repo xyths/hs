@@ -83,15 +83,7 @@ func (c *Client) GetSpotAccountId() (int64, error) {
 	return 0, nil
 }
 
-func (c *Client) PricePrecision(symbol string) int32 {
-	return PricePrecision[symbol]
-}
-
-func (c *Client) AmountPrecision(symbol string) int32 {
-	return AmountPrecision[symbol]
-}
-
-func (c *Client) GetPrice(symbol string) (decimal.Decimal, error) {
+func (c *Client) LastPrice(symbol string) (decimal.Decimal, error) {
 	hb := new(client.MarketClient).Init(c.Host)
 
 	optionalRequest := getrequest.GetCandlestickOptionalRequest{Period: getrequest.MIN1, Size: 1}
@@ -109,7 +101,7 @@ func (c *Client) GetPrice(symbol string) (decimal.Decimal, error) {
 	return decimal.NewFromFloat(0), nil
 }
 
-func (c *Client) GetSpotBalance() (map[string]decimal.Decimal, error) {
+func (c *Client) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 	hb := new(client.AccountClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	accountBalance, err := hb.GetAccountBalance(fmt.Sprintf("%d", c.SpotAccountId))
 	if err != nil {
@@ -144,6 +136,30 @@ func (cs CandleSlice) Swap(i, j int) {
 }
 func (cs CandleSlice) Less(i, j int) bool {
 	return cs[i].Timestamp[0] < cs[j].Timestamp[0]
+}
+
+func (c *Client) Candle(symbol, clientId, period string, size int) (hs.Candle, error) {
+	hb := new(client.MarketClient).Init(c.Host)
+	optionalRequest := getrequest.GetCandlestickOptionalRequest{Period: period, Size: size}
+	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
+	if err != nil {
+		log.Println(err)
+		return hs.Candle{}, err
+	}
+	candle := hs.NewCandle(len(candlesticks))
+	for i, cs := range candlesticks {
+		log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
+			cs.Open, cs.High, cs.Low, cs.Close)
+		//return cs.Close, nil
+		candle.Timestamp[i] = cs.Id
+		candle.Open[i], _ = cs.Open.Float64()
+		candle.High[i], _ = cs.High.Float64()
+		candle.Low[i], _ = cs.Low.Float64()
+		candle.Close[i], _ = cs.Close.Float64()
+		candle.Volume[i], _ = cs.Vol.Float64()
+	}
+
+	return candle, nil
 }
 
 func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) (hs.Candle, error) {
@@ -251,7 +267,15 @@ func (c *Client) PlaceOrder(orderType, symbol, clientOrderId string, price, amou
 	return 0, errors.New("unknown status")
 }
 
-func (c *Client) CancelOrder(orderId uint64) error {
+func (c *Client) Buy(symbol, orderType, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error) {
+	return c.PlaceOrder(orderType, symbol, clientOrderId, price, amount)
+}
+
+func (c *Client) Sell(symbol, orderType, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error) {
+	return c.PlaceOrder(orderType, symbol, clientOrderId, price, amount)
+}
+
+func (c *Client) CancelOrder(symbol string, orderId uint64) error {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	resp, err := hb.CancelOrderById(fmt.Sprintf("%d", orderId))
 	if err != nil {

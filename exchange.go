@@ -8,26 +8,31 @@ import (
 )
 
 // common exchange interface for all symbols
-type RestAPI interface {
+type RestAPIExchange interface {
 	PricePrecision(symbol string) int32
 	AmountPrecision(symbol string) int32
-	GetSpotBalance() (map[string]decimal.Decimal, error)
-	GetPrice(symbol string) (decimal.Decimal, error)
-	GetCandle(symbol, clientId, period string, from, to time.Time) (Candle, error)
+	MinAmount(symbol string) decimal.Decimal
+	MinTotal(symbol string) decimal.Decimal
 
-	PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error)
-	CancelOrder(orderId uint64) error
+	SpotAvailableBalance() (map[string]decimal.Decimal, error)
+	LastPrice(symbol string) (decimal.Decimal, error)
+	Candle(symbol, clientId, period string, size int) (Candle, error)
+
+	//PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error)
+	Buy(symbol, orderType, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)
+	Sell(symbol, orderType, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)
+	CancelOrder(symbol string, orderId uint64) error
 }
 
-type WsAPI interface {
+type WsAPIExchange interface {
 	SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler websocketclientbase.ResponseHandler)
 	SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler websocketclientbase.ResponseHandler)
 }
 
 // common exchange interface, for all symbols, all crypto-exchanges
 type Exchange interface {
-	RestAPI
-	WsAPI
+	RestAPIExchange
+	WsAPIExchange
 }
 
 type OrderType = int
