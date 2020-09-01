@@ -198,14 +198,14 @@ func TestClient_SubscribeAccountUpdate(t *testing.T) {
 
 func TestClient_GetPrice(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
-	price, err := client.GetPrice(BTC_USDT)
+	price, err := client.LastPrice(BTC_USDT)
 	require.NoError(t, err)
 	t.Logf("lastest BTC price is: %s", price)
 }
 
 func TestClient_GetSpotBalance(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
-	balance, err := client.GetSpotBalance()
+	balance, err := client.SpotAvailableBalance()
 	require.NoError(t, err)
 	for k, v := range balance {
 		t.Logf("%s:%s", k, v)

@@ -4,6 +4,10 @@ import "github.com/shopspring/decimal"
 
 const (
 	BTC_USDT = "btcusdt"
+
+	BTC  = "btc"
+	USDT = "usdt"
+	HT   = "ht"
 )
 
 var (
