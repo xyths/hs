@@ -138,7 +138,7 @@ func (cs CandleSlice) Less(i, j int) bool {
 	return cs[i].Timestamp[0] < cs[j].Timestamp[0]
 }
 
-func (c *Client) Candle(symbol, clientId, period string, size int) (hs.Candle, error) {
+func (c *Client) Candle(symbol, period string, size int) (hs.Candle, error) {
 	hb := new(client.MarketClient).Init(c.Host)
 	optionalRequest := getrequest.GetCandlestickOptionalRequest{Period: period, Size: size}
 	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
