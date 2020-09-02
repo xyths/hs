@@ -294,12 +294,12 @@ func (c *Client) SellLimit(symbol, clientOrderId string, price, amount decimal.D
 	return c.SpotLimitOrder(OrderTypeSellLimit, symbol, clientOrderId, price, amount)
 }
 
-func (c *Client) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal, operator string) (orderId uint64, err error) {
-	return c.SpotStopLimitOrder(OrderTypeBuyStopLimit, symbol, clientOrderId, operator, price, amount, stopPrice)
+func (c *Client) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
+	return c.SpotStopLimitOrder(OrderTypeBuyStopLimit, symbol, clientOrderId, "gte", price, amount, stopPrice)
 }
 
-func (c *Client) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal, operator string) (orderId uint64, err error) {
-	return c.SpotStopLimitOrder(OrderTypeSellStopLimit, symbol, clientOrderId, operator, price, amount, stopPrice)
+func (c *Client) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
+	return c.SpotStopLimitOrder(OrderTypeSellStopLimit, symbol, clientOrderId, "lte", price, amount, stopPrice)
 }
 
 func (c *Client) CancelOrder(symbol string, orderId uint64) error {

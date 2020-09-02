@@ -21,8 +21,8 @@ type RestAPIExchange interface {
 	//PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error)
 	BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)
 	SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)
-	BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal, operator string) (orderId uint64, err error)
-	SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal, operator string) (orderId uint64, err error)
+	BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error)
+	SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error)
 	CancelOrder(symbol string, orderId uint64) error
 }
 
