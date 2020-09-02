@@ -145,20 +145,21 @@ func (c *Client) Candle(symbol string, period time.Duration, size int) (hs.Candl
 	if err != nil {
 		return hs.Candle{}, err
 	}
-	candle := hs.NewCandle(len(candlesticks))
-	candle.Timestamp = make([]int64, len(candlesticks))
-	candle.Open = make([]float64, len(candlesticks))
-	candle.High = make([]float64, len(candlesticks))
-	candle.Low = make([]float64, len(candlesticks))
-	candle.Close = make([]float64, len(candlesticks))
-	candle.Volume = make([]float64, len(candlesticks))
-	for i, cs := range candlesticks {
-		candle.Timestamp[i] = cs.Id
-		candle.Open[i], _ = cs.Open.Float64()
-		candle.High[i], _ = cs.High.Float64()
-		candle.Low[i], _ = cs.Low.Float64()
-		candle.Close[i], _ = cs.Close.Float64()
-		candle.Volume[i], _ = cs.Vol.Float64()
+	l := len(candlesticks)
+	candle := hs.NewCandle(l)
+	candle.Timestamp = make([]int64, l)
+	candle.Open = make([]float64, l)
+	candle.High = make([]float64, l)
+	candle.Low = make([]float64, l)
+	candle.Close = make([]float64, l)
+	candle.Volume = make([]float64, l)
+	for i := l - 1; i >= 0; i-- {
+		candle.Timestamp[i] = candlesticks[i].Id
+		candle.Open[i], _ = candlesticks[i].Open.Float64()
+		candle.High[i], _ = candlesticks[i].High.Float64()
+		candle.Low[i], _ = candlesticks[i].Low.Float64()
+		candle.Close[i], _ = candlesticks[i].Close.Float64()
+		candle.Volume[i], _ = candlesticks[i].Vol.Float64()
 	}
 
 	return candle, nil
