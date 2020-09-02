@@ -154,12 +154,12 @@ func (c *Client) Candle(symbol string, period time.Duration, size int) (hs.Candl
 	candle.Close = make([]float64, l)
 	candle.Volume = make([]float64, l)
 	for i := l - 1; i >= 0; i-- {
-		candle.Timestamp[i] = candlesticks[i].Id
-		candle.Open[i], _ = candlesticks[i].Open.Float64()
-		candle.High[i], _ = candlesticks[i].High.Float64()
-		candle.Low[i], _ = candlesticks[i].Low.Float64()
-		candle.Close[i], _ = candlesticks[i].Close.Float64()
-		candle.Volume[i], _ = candlesticks[i].Vol.Float64()
+		candle.Timestamp[l-1-i] = candlesticks[i].Id
+		candle.Open[l-1-i], _ = candlesticks[i].Open.Float64()
+		candle.High[l-1-i], _ = candlesticks[i].High.Float64()
+		candle.Low[l-1-i], _ = candlesticks[i].Low.Float64()
+		candle.Close[l-1-i], _ = candlesticks[i].Close.Float64()
+		candle.Volume[l-1-i], _ = candlesticks[i].Vol.Float64()
 	}
 
 	return candle, nil
