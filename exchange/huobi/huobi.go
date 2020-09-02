@@ -143,14 +143,16 @@ func (c *Client) Candle(symbol string, period time.Duration, size int) (hs.Candl
 	optionalRequest := getrequest.GetCandlestickOptionalRequest{Period: getPeriodString(period), Size: size}
 	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
 	if err != nil {
-		log.Println(err)
 		return hs.Candle{}, err
 	}
 	candle := hs.NewCandle(len(candlesticks))
+	candle.Timestamp = make([]int64, len(candlesticks))
+	candle.Open = make([]float64, len(candlesticks))
+	candle.High = make([]float64, len(candlesticks))
+	candle.Low = make([]float64, len(candlesticks))
+	candle.Close = make([]float64, len(candlesticks))
+	candle.Volume = make([]float64, len(candlesticks))
 	for i, cs := range candlesticks {
-		log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
-			cs.Open, cs.High, cs.Low, cs.Close)
-		//return cs.Close, nil
 		candle.Timestamp[i] = cs.Id
 		candle.Open[i], _ = cs.Open.Float64()
 		candle.High[i], _ = cs.High.Float64()
