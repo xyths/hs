@@ -44,6 +44,9 @@ var (
 
 // used by buy/sell
 const (
+	// 订单类型("gtc"：普通订单（默认）；
+	// “ioc”：立即执行否则取消订单（Immediate-Or-Cancel，IOC）；
+	// "poc":被动委托（只挂单，不吃单）（Pending-Or-Cancelled，POC）)
 	OrderTypeNormal = "gtc"
 	OrderTypeGTC    = "gtc"
 	OrderTypeIOC    = "ioc"

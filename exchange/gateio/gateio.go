@@ -238,8 +238,8 @@ func (g *GateIO) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 
 // 订单类型("gtc"：普通订单（默认）；“ioc”：立即执行否则取消订单（Immediate-Or-Cancel，IOC）；"poc":被动委托（只挂单，不吃单）（Pending-Or-Cancelled，POC）)
 // Place order buy
-func (g *GateIO) Buy(symbol, orderType, text string, price, amount decimal.Decimal) (orderId uint64, err error) {
-	resp, err := g.BuyOrder(symbol, price, amount, orderType, text)
+func (g *GateIO) BuyLimit(symbol, text string, price, amount decimal.Decimal) (orderId uint64, err error) {
+	resp, err := g.BuyOrder(symbol, price, amount, OrderTypeGTC, text)
 	if err != nil {
 		return 0, err
 	}
@@ -257,10 +257,10 @@ func (g *GateIO) BuyOrder(symbol string, price, amount decimal.Decimal, orderTyp
 }
 
 // Place order sell
-func (g *GateIO) Sell(symbol, orderType, text string, price, amount decimal.Decimal) (orderId uint64, err error) {
+func (g *GateIO) SellLimit(symbol, text string, price, amount decimal.Decimal) (orderId uint64, err error) {
 	url := "/private/sell"
 	// 价格精度：5，数量精度：3
-	param := fmt.Sprintf("currencyPair=%s&rate=%s&amount=%s&orderType=%s&text=t-%s", symbol, price, amount, orderType, text)
+	param := fmt.Sprintf("currencyPair=%s&rate=%s&amount=%s&orderType=%s&text=t-%s", symbol, price, amount, OrderTypeGTC, text)
 	var res ResponseOrder
 	err = g.request(POST, url, param, &res)
 	if err != nil {
@@ -270,6 +270,14 @@ func (g *GateIO) Sell(symbol, orderType, text string, price, amount decimal.Deci
 		return 0, errors.New(res.Message)
 	}
 	return res.OrderNumber, nil
+}
+
+func (g *GateIO) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal, operator string) (orderId uint64, err error) {
+	return 0, nil
+}
+
+func (g *GateIO) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal, operator string) (orderId uint64, err error) {
+	return 0, nil
 }
 
 // Cancel order
