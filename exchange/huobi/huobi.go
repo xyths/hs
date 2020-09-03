@@ -274,6 +274,18 @@ func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, 
 	return c.PlaceOrder(&request)
 }
 
+func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total decimal.Decimal) (uint64, error) {
+	request := postrequest.PlaceOrderRequest{
+		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
+		Type:          orderType,
+		Source:        "spot-api",
+		Symbol:        symbol,
+		Amount:        total.String(),
+		ClientOrderId: clientOrderId,
+	}
+	return c.PlaceOrder(&request)
+}
+
 func (c *Client) SpotStopLimitOrder(orderType, symbol, clientOrderId, operator string, price, amount, stopPrice decimal.Decimal) (uint64, error) {
 	request := postrequest.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
@@ -295,6 +307,14 @@ func (c *Client) BuyLimit(symbol, clientOrderId string, price, amount decimal.De
 
 func (c *Client) SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error) {
 	return c.SpotLimitOrder(OrderTypeSellLimit, symbol, clientOrderId, price, amount)
+}
+
+func (c *Client) BuyMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
+	return c.SpotMarketOrder(OrderTypeBuyMarket, symbol, clientOrderId, total)
+}
+
+func (c *Client) SellMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
+	return c.SpotMarketOrder(OrderTypeSellMarket, symbol, clientOrderId, total)
 }
 
 func (c *Client) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {

@@ -272,6 +272,14 @@ func (g *GateIO) SellLimit(symbol, text string, price, amount decimal.Decimal) (
 	return res.OrderNumber, nil
 }
 
+func (g *GateIO) BuyMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
+	return 0, nil
+}
+
+func (g *GateIO) SellMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
+	return 0, nil
+}
+
 func (g *GateIO) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
 	return 0, nil
 }
