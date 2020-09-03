@@ -110,3 +110,31 @@ func TestCandle_Add(t *testing.T) {
 		}
 	})
 }
+
+func TestMergeTick(t *testing.T) {
+	var tests = [][15]float64{
+		{
+			1, 1, 1, 1, 1,
+			1, 1, 1, 1, 1,
+			1, 1, 1, 1, 2,
+		},
+		{
+			1, 1, 1, 0, 2,
+			1, 2, 2, 2, 1,
+			1, 2, 1, 2, 3,
+		},
+		{
+			1, 3, 2, 0, 1,
+			1, 2, 1, 0, 2,
+			1, 3, 1, 0, 3,
+		},
+	}
+	for i, tt := range tests {
+		o, h, l, c, v := MergeTick(tt[0], tt[1], tt[2], tt[3],
+			tt[4], tt[5], tt[6], tt[7], tt[8], tt[9])
+		if o != tt[10] || h != tt[11] || l != tt[12] || c != tt[13] || v != tt[14] {
+			t.Logf("%d: wrong, want [%f %f %f %f %f], got [%f %f %f %f %f]", i, o, h, l, c, v,
+				tt[10], tt[11], tt[12], tt[13], tt[14])
+		}
+	}
+}

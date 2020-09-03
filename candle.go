@@ -1,5 +1,7 @@
 package hs
 
+import "math"
+
 type Ticker struct {
 	Timestamp int64 // unix timestamp in seconds
 	Open      float64
@@ -31,12 +33,18 @@ func (c *Candle) Append(ticker Ticker) {
 	if c.Capacity == 0 {
 		return
 	}
-	c.Timestamp = append(c.Timestamp, ticker.Timestamp)
-	c.Open = append(c.Open, ticker.Open)
-	c.High = append(c.High, ticker.High)
-	c.Low = append(c.Low, ticker.Low)
-	c.Close = append(c.Close, ticker.Close)
-	c.Volume = append(c.Volume, ticker.Volume)
+	if c.Timestamp[c.Length()-1] == ticker.Timestamp {
+		p := c.Length() - 1
+		c.Open[p], c.High[p], c.Low[p], c.Close[p], c.Volume[p] = MergeTick(c.Open[p], c.High[p], c.Low[p], c.Close[p], c.Volume[p],
+			ticker.Open, ticker.High, ticker.Low, ticker.Close, ticker.Volume)
+	} else {
+		c.Timestamp = append(c.Timestamp, ticker.Timestamp)
+		c.Open = append(c.Open, ticker.Open)
+		c.High = append(c.High, ticker.High)
+		c.Low = append(c.Low, ticker.Low)
+		c.Close = append(c.Close, ticker.Close)
+		c.Volume = append(c.Volume, ticker.Volume)
+	}
 
 	c.Truncate()
 }
@@ -76,4 +84,13 @@ func (c *Candle) Truncate() {
 	c.Low = c.Low[pos:]
 	c.Close = c.Close[pos:]
 	c.Volume = c.Volume[pos:]
+}
+
+func MergeTick(o1, h1, l1, c1, v1, o2, h2, l2, c2, v2 float64) (open, high, low, close, volume float64) {
+	open = o1
+	high = math.Max(h1, h2)
+	low = math.Min(l1, l2)
+	close = c2
+	volume = v1 + v2
+	return
 }
