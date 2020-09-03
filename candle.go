@@ -33,7 +33,7 @@ func (c *Candle) Append(ticker Ticker) {
 	if c.Capacity == 0 {
 		return
 	}
-	if c.Timestamp[c.Length()-1] == ticker.Timestamp {
+	if c.Length() >= 1 && c.Timestamp[c.Length()-1] == ticker.Timestamp {
 		p := c.Length() - 1
 		c.Open[p], c.High[p], c.Low[p], c.Close[p], c.Volume[p] = MergeTick(c.Open[p], c.High[p], c.Low[p], c.Close[p], c.Volume[p],
 			ticker.Open, ticker.High, ticker.Low, ticker.Close, ticker.Volume)
