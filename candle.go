@@ -35,8 +35,8 @@ func (c *Candle) Append(ticker Ticker) {
 	}
 	if c.Length() >= 1 && c.Timestamp[c.Length()-1] == ticker.Timestamp {
 		p := c.Length() - 1
-		c.Open[p], c.High[p], c.Low[p], c.Close[p], c.Volume[p] = MergeTick(c.Open[p], c.High[p], c.Low[p], c.Close[p], c.Volume[p],
-			ticker.Open, ticker.High, ticker.Low, ticker.Close, ticker.Volume)
+		// use latest value
+		c.Open[p], c.High[p], c.Low[p], c.Close[p], c.Volume[p] = ticker.Open, ticker.High, ticker.Low, ticker.Close, ticker.Volume
 	} else {
 		c.Timestamp = append(c.Timestamp, ticker.Timestamp)
 		c.Open = append(c.Open, ticker.Open)
