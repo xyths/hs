@@ -153,30 +153,34 @@ func (g *GateIO) Candle(symbol string, period time.Duration, size int) (candle h
 	return
 }
 
-// 获取Candle
-func (g *GateIO) GetCandle(symbol string, groupSec, rangeHour int) (candles hs.Candle, err error) {
-	url := fmt.Sprintf("/candlestick2/%s?group_sec=%d&range_hour=%d", symbol, groupSec, rangeHour)
-	param := ""
-
-	var result ResponseCandles
-	err = g.request(GET, url, param, &result)
-	if err != nil {
-		return candles, err
-	}
-	candles = hs.NewCandle(len(result.Data))
-	for i := 0; i < len(result.Data); i++ {
-		c := result.Data[i]
-		candles.Append(hs.Ticker{
-			Timestamp: int64(c[0]),
-			Volume:    c[1],
-			Close:     c[2],
-			High:      c[3],
-			Low:       c[4],
-			Open:      c[5],
-		})
-	}
-	return
+func (g *GateIO) GetCandle(symbol, clientId, period string, from, to time.Time) (hs.Candle, error){
+	return hs.Candle{}, nil
 }
+
+// 获取Candle
+//func (g *GateIO) GetCandle(symbol string, groupSec, rangeHour int) (candles hs.Candle, err error) {
+//	url := fmt.Sprintf("/candlestick2/%s?group_sec=%d&range_hour=%d", symbol, groupSec, rangeHour)
+//	param := ""
+//
+//	var result ResponseCandles
+//	err = g.request(GET, url, param, &result)
+//	if err != nil {
+//		return candles, err
+//	}
+//	candles = hs.NewCandle(len(result.Data))
+//	for i := 0; i < len(result.Data); i++ {
+//		c := result.Data[i]
+//		candles.Append(hs.Ticker{
+//			Timestamp: int64(c[0]),
+//			Volume:    c[1],
+//			Close:     c[2],
+//			High:      c[3],
+//			Low:       c[4],
+//			Open:      c[5],
+//		})
+//	}
+//	return
+//}
 
 // Trade History
 func (g *GateIO) TradeHistory(params string) (string, error) {

@@ -10,11 +10,10 @@ import (
 	"github.com/huobirdcenter/huobi_golang/pkg/client/marketwebsocketclient"
 	"github.com/huobirdcenter/huobi_golang/pkg/client/orderwebsocketclient"
 	"github.com/huobirdcenter/huobi_golang/pkg/client/websocketclientbase"
-	"github.com/huobirdcenter/huobi_golang/pkg/getrequest"
-	"github.com/huobirdcenter/huobi_golang/pkg/postrequest"
-	"github.com/huobirdcenter/huobi_golang/pkg/response/account"
-	"github.com/huobirdcenter/huobi_golang/pkg/response/auth"
-	"github.com/huobirdcenter/huobi_golang/pkg/response/market"
+	"github.com/huobirdcenter/huobi_golang/pkg/model/account"
+	"github.com/huobirdcenter/huobi_golang/pkg/model/auth"
+	"github.com/huobirdcenter/huobi_golang/pkg/model/market"
+	"github.com/huobirdcenter/huobi_golang/pkg/model/order"
 	"github.com/shopspring/decimal"
 	"github.com/xyths/hs"
 	"github.com/xyths/hs/convert"
@@ -86,7 +85,7 @@ func (c *Client) GetSpotAccountId() (int64, error) {
 func (c *Client) LastPrice(symbol string) (decimal.Decimal, error) {
 	hb := new(client.MarketClient).Init(c.Host)
 
-	optionalRequest := getrequest.GetCandlestickOptionalRequest{Period: getrequest.MIN1, Size: 1}
+	optionalRequest := market.GetCandlestickOptionalRequest{Period: market.MIN1, Size: 1}
 	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
 	if err != nil {
 		log.Println(err)
@@ -140,7 +139,7 @@ func (cs CandleSlice) Less(i, j int) bool {
 
 func (c *Client) Candle(symbol string, period time.Duration, size int) (hs.Candle, error) {
 	hb := new(client.MarketClient).Init(c.Host)
-	optionalRequest := getrequest.GetCandlestickOptionalRequest{Period: getPeriodString(period), Size: size}
+	optionalRequest := market.GetCandlestickOptionalRequest{Period: getPeriodString(period), Size: size}
 	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
 	if err != nil {
 		return hs.Candle{}, err
@@ -240,7 +239,7 @@ func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) 
 	return candles, nil
 }
 
-func (c *Client) PlaceOrder(request *postrequest.PlaceOrderRequest) (uint64, error) {
+func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (uint64, error) {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	resp, err := hb.PlaceOrder(request)
 	if err != nil {
@@ -262,7 +261,7 @@ func (c *Client) PlaceOrder(request *postrequest.PlaceOrderRequest) (uint64, err
 }
 
 func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
-	request := postrequest.PlaceOrderRequest{
+	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
 		Source:        "spot-api",
@@ -275,7 +274,7 @@ func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, 
 }
 
 func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total decimal.Decimal) (uint64, error) {
-	request := postrequest.PlaceOrderRequest{
+	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
 		Source:        "spot-api",
@@ -287,7 +286,7 @@ func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total 
 }
 
 func (c *Client) SpotStopLimitOrder(orderType, symbol, clientOrderId, operator string, price, amount, stopPrice decimal.Decimal) (uint64, error) {
-	request := postrequest.PlaceOrderRequest{
+	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
 		Source:        "spot-api",
@@ -485,25 +484,25 @@ func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId strin
 func (c Client) splitTimestamp(period string, from, to time.Time) (timestamps []int64) {
 	var d time.Duration
 	switch period {
-	case getrequest.MIN1:
+	case market.MIN1:
 		d = time.Minute
-	case getrequest.MIN5:
+	case market.MIN5:
 		d = time.Minute * 5
-	case getrequest.MIN15:
+	case market.MIN15:
 		d = time.Minute * 15
-	case getrequest.MIN30:
+	case market.MIN30:
 		d = time.Minute * 30
-	case getrequest.MIN60:
+	case market.MIN60:
 		d = time.Hour
-	case getrequest.HOUR4:
+	case market.HOUR4:
 		d = time.Hour * 4
-	case getrequest.DAY1:
+	case market.DAY1:
 		d = time.Hour * 24
-	case getrequest.MON1:
+	case market.MON1:
 		d = time.Hour * 24 * 30
-	case getrequest.WEEK1:
+	case market.WEEK1:
 		d = time.Hour * 24 * 7
-	case getrequest.YEAR1:
+	case market.YEAR1:
 		d = time.Hour * 24 * 365
 	default:
 		d = time.Hour * 24
@@ -520,25 +519,25 @@ func (c Client) splitTimestamp(period string, from, to time.Time) (timestamps []
 func getPeriodString(period time.Duration) (periodStr string) {
 	switch period {
 	case hs.MIN1:
-		periodStr = getrequest.MIN1
+		periodStr = market.MIN1
 	case hs.MIN5:
-		periodStr = getrequest.MIN5
+		periodStr = market.MIN5
 	case hs.MIN15:
-		periodStr = getrequest.MIN15
+		periodStr = market.MIN15
 	case hs.MIN30:
-		periodStr = getrequest.MIN30
+		periodStr = market.MIN30
 	case hs.HOUR1:
-		periodStr = getrequest.MIN60
+		periodStr = market.MIN60
 	case hs.HOUR4:
-		periodStr = getrequest.HOUR4
+		periodStr = market.HOUR4
 	case hs.DAY1:
-		periodStr = getrequest.DAY1
+		periodStr = market.DAY1
 	case hs.MON1:
-		periodStr = getrequest.MON1
+		periodStr = market.MON1
 	case hs.WEEK1:
-		periodStr = getrequest.WEEK1
+		periodStr = market.WEEK1
 	case hs.YEAR1:
-		periodStr = getrequest.YEAR1
+		periodStr = market.YEAR1
 	default:
 		logger.Sugar.Fatalf("bad period")
 	}

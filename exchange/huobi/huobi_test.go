@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/huobirdcenter/huobi_golang/logging/applogger"
-	"github.com/huobirdcenter/huobi_golang/pkg/getrequest"
-	"github.com/huobirdcenter/huobi_golang/pkg/response/account"
-	"github.com/huobirdcenter/huobi_golang/pkg/response/market"
-	"github.com/huobirdcenter/huobi_golang/pkg/response/order"
-	"github.com/shopspring/decimal"
+	"github.com/huobirdcenter/huobi_golang/pkg/model/account"
+	"github.com/huobirdcenter/huobi_golang/pkg/model/market"
+	"github.com/huobirdcenter/huobi_golang/pkg/model/order"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -38,15 +36,15 @@ func TestClient_GetSpotAccountId(t *testing.T) {
 }
 
 // ACCESS_KEY=xxxx SECRET_KEY=xxxx go test ./ -v -run=TestClient_PlaceOrder
-func TestClient_PlaceOrder(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
-	price := decimal.NewFromFloat(8000.1)
-	amount := decimal.NewFromFloat(0.001)
-	clientOrderId := fmt.Sprintf("%d", time.Now().Unix())
-	orderId, err := client.PlaceOrder(OrderTypeBuyLimit, BTC_USDT, clientOrderId, price, amount)
-	require.NoError(t, err)
-	t.Logf("place buy order, id = %d", orderId)
-}
+//func TestClient_PlaceOrder(t *testing.T) {
+//	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+//	price := decimal.NewFromFloat(8000.1)
+//	amount := decimal.NewFromFloat(0.001)
+//	clientOrderId := fmt.Sprintf("%d", time.Now().Unix())
+//	orderId, err := client.PlaceOrder(OrderTypeBuyLimit, BTC_USDT, clientOrderId, price, amount)
+//	require.NoError(t, err)
+//	t.Logf("place buy order, id = %d", orderId)
+//}
 
 func TestClient_SubscribeLast24hCandlestick(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
@@ -82,13 +80,25 @@ func TestClient_GetCandle(t *testing.T) {
 
 	t.Run("300 candles till now", func(t *testing.T) {
 		to := time.Now()
-		from := to.Add(-1 * 10 * CandlestickReqMaxLength * time.Minute)
-		candle, err := client.GetCandle(BTC_USDT, "1101", getrequest.MIN1, from, to)
+		from := to.Add(-1 * CandlestickReqMaxLength * time.Minute)
+		candle, err := client.GetCandle(BTC_USDT, "1101", market.MIN1, from, to)
 		require.NoError(t, err)
 		t.Logf("candle length: %d", candle.Length())
 		for i := 1; i < candle.Length(); i++ {
-			if candle.Timestamp[i-1] <= candle.Timestamp[i] {
-				t.Errorf("Timestamp[%d] (%d) <= [%d] (%d)", i-1, candle.Timestamp[i-1], i, candle.Timestamp[i])
+			if candle.Timestamp[i-1] >= candle.Timestamp[i] {
+				t.Errorf("Timestamp[%d] (%d) >= [%d] (%d)", i-1, candle.Timestamp[i-1], i, candle.Timestamp[i])
+			}
+		}
+	})
+	t.Run("600 candles till now", func(t *testing.T) {
+		to := time.Now()
+		from := to.Add(-1 * 2 * CandlestickReqMaxLength * time.Minute)
+		candle, err := client.GetCandle(BTC_USDT, "1101", market.MIN1, from, to)
+		require.NoError(t, err)
+		t.Logf("candle length: %d", candle.Length())
+		for i := 1; i < candle.Length(); i++ {
+			if candle.Timestamp[i-1] >= candle.Timestamp[i] {
+				t.Errorf("Timestamp[%d] (%d) >= [%d] (%d)", i-1, candle.Timestamp[i-1], i, candle.Timestamp[i])
 			}
 		}
 	})
