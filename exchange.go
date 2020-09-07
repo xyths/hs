@@ -16,8 +16,8 @@ type RestAPIExchange interface {
 
 	SpotAvailableBalance() (map[string]decimal.Decimal, error)
 	LastPrice(symbol string) (decimal.Decimal, error)
-	//Candle(symbol string, period time.Duration, size int) (Candle, error)
-	GetCandle(symbol, clientId, period string, from, to time.Time) (Candle, error)
+	CandleBySize(symbol string, period time.Duration, size int) (Candle, error)
+	CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (Candle, error)
 
 	//PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error)
 	BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)

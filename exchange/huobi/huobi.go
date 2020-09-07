@@ -137,7 +137,7 @@ func (cs CandleSlice) Less(i, j int) bool {
 	return cs[i].Timestamp[0] < cs[j].Timestamp[0]
 }
 
-func (c *Client) Candle(symbol string, period time.Duration, size int) (hs.Candle, error) {
+func (c *Client) CandleBySize(symbol string, period time.Duration, size int) (hs.Candle, error) {
 	hb := new(client.MarketClient).Init(c.Host)
 	optionalRequest := market.GetCandlestickOptionalRequest{Period: getPeriodString(period), Size: size}
 	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
@@ -164,7 +164,7 @@ func (c *Client) Candle(symbol string, period time.Duration, size int) (hs.Candl
 	return candle, nil
 }
 
-func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) (hs.Candle, error) {
+func (c *Client) CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
 	timestamps := c.splitTimestamp(period, from, to)
 	if len(timestamps) <= 1 {
 		return hs.Candle{}, errors.New("'from' need before 'to'")
@@ -186,11 +186,12 @@ func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) 
 			candles.Add(c)
 		}
 	}()
+	periodStr := getPeriodString(period)
 	hb.SetHandler(
 		// Connected handler
 		func() {
 			for i := 1; i < len(timestamps); i++ {
-				hb.Request(symbol, period, timestamps[i-1], timestamps[i], clientId)
+				hb.Request(symbol, periodStr, timestamps[i-1], timestamps[i], clientId)
 				wg.Add(1)
 				time.Sleep(time.Second / 10)
 			}
@@ -225,14 +226,14 @@ func (c *Client) GetCandle(symbol, clientId, period string, from, to time.Time) 
 					}
 				}
 			} else {
-				applogger.Warn("Unknown response: %v", resp)
+				logger.Sugar.Warn("Unknown response: %v", resp)
 			}
 			ch <- hs.Candle{}
 			return
 		})
 
 	hb.Connect(true)
-	defer hb.UnSubscribe(symbol, period, clientId)
+	defer hb.UnSubscribe(symbol, periodStr, clientId)
 
 	wg.Wait()
 
@@ -243,7 +244,6 @@ func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (uint64, error) {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	resp, err := hb.PlaceOrder(request)
 	if err != nil {
-		log.Println(err)
 		return 0, err
 	}
 	switch resp.Status {
@@ -481,34 +481,34 @@ func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId strin
 	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 }
 
-func (c Client) splitTimestamp(period string, from, to time.Time) (timestamps []int64) {
-	var d time.Duration
-	switch period {
-	case market.MIN1:
-		d = time.Minute
-	case market.MIN5:
-		d = time.Minute * 5
-	case market.MIN15:
-		d = time.Minute * 15
-	case market.MIN30:
-		d = time.Minute * 30
-	case market.MIN60:
-		d = time.Hour
-	case market.HOUR4:
-		d = time.Hour * 4
-	case market.DAY1:
-		d = time.Hour * 24
-	case market.MON1:
-		d = time.Hour * 24 * 30
-	case market.WEEK1:
-		d = time.Hour * 24 * 7
-	case market.YEAR1:
-		d = time.Hour * 24 * 365
-	default:
-		d = time.Hour * 24
-	}
+func (c Client) splitTimestamp(period time.Duration, from, to time.Time) (timestamps []int64) {
+	//var d time.Duration
+	//switch period {
+	//case market.MIN1:
+	//	d = time.Minute
+	//case market.MIN5:
+	//	d = time.Minute * 5
+	//case market.MIN15:
+	//	d = time.Minute * 15
+	//case market.MIN30:
+	//	d = time.Minute * 30
+	//case market.MIN60:
+	//	d = time.Hour
+	//case market.HOUR4:
+	//	d = time.Hour * 4
+	//case market.DAY1:
+	//	d = time.Hour * 24
+	//case market.MON1:
+	//	d = time.Hour * 24 * 30
+	//case market.WEEK1:
+	//	d = time.Hour * 24 * 7
+	//case market.YEAR1:
+	//	d = time.Hour * 24 * 365
+	//default:
+	//	d = time.Hour * 24
+	//}
 
-	for t := from; t.Before(to); t = t.Add(d * CandlestickReqMaxLength) {
+	for t := from; t.Before(to); t = t.Add(period * CandlestickReqMaxLength) {
 		timestamps = append(timestamps, t.Unix())
 	}
 	timestamps = append(timestamps, to.Unix())

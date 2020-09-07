@@ -132,7 +132,7 @@ func (g *GateIO) OrderBook(symbol string) (ResponseOrderBook, error) {
 }
 
 // 获取Candle
-func (g *GateIO) Candle(symbol string, period time.Duration, size int) (candle hs.Candle, err error) {
+func (g *GateIO) CandleBySize(symbol string, period time.Duration, size int) (candle hs.Candle, err error) {
 	//url := fmt.Sprintf("/candlestick2/%s?group_sec=%d&range_hour=%d", currencyPair, groupSec, rangeHour)
 	//param := ""
 	//
@@ -153,7 +153,7 @@ func (g *GateIO) Candle(symbol string, period time.Duration, size int) (candle h
 	return
 }
 
-func (g *GateIO) GetCandle(symbol, clientId, period string, from, to time.Time) (hs.Candle, error){
+func (g *GateIO) CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
 	return hs.Candle{}, nil
 }
 
