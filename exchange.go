@@ -2,7 +2,6 @@ package hs
 
 import (
 	"context"
-	"github.com/huobirdcenter/huobi_golang/pkg/client/websocketclientbase"
 	"github.com/shopspring/decimal"
 	"time"
 )
@@ -29,9 +28,11 @@ type RestAPIExchange interface {
 	CancelOrder(symbol string, orderId uint64) error
 }
 
+type ResponseHandler func(response interface{})
+
 type WsAPIExchange interface {
-	SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler websocketclientbase.ResponseHandler)
-	SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler websocketclientbase.ResponseHandler)
+	SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler ResponseHandler)
+	SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler ResponseHandler)
 }
 
 // common exchange interface, for all symbols, all crypto-exchanges
@@ -58,11 +59,11 @@ const (
 
 type Order struct {
 	Id       uint64
-	ClientId string
+	ClientId string `bson:"clientId"`
 
 	Type          OrderType
 	Symbol        string
-	InitialPrice  decimal.Decimal
+	InitialPrice  decimal.Decimal `bson:"initialPrice"`
 	InitialAmount decimal.Decimal
 	Timestamp     int64
 

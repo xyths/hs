@@ -102,6 +102,18 @@ func TestClient_CandleFrom(t *testing.T) {
 			}
 		}
 	})
+	t.Run("1000 candles till now", func(t *testing.T) {
+		to := time.Now()
+		from := to.Add(-1000 * period)
+		candle, err := client.CandleFrom(BTC_USDT, "1101", period, from, to)
+		require.NoError(t, err)
+		t.Logf("candle length: %d", candle.Length())
+		for i := 1; i < candle.Length(); i++ {
+			if candle.Timestamp[i-1] >= candle.Timestamp[i] {
+				t.Errorf("Timestamp[%d] (%d) >= [%d] (%d)", i-1, candle.Timestamp[i-1], i, candle.Timestamp[i])
+			}
+		}
+	})
 }
 
 func TestClient_SubscribeCandlestick(t *testing.T) {

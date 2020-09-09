@@ -365,7 +365,7 @@ func (c *Client) SubscribeLast24hCandlestick(ctx context.Context, symbol, client
 }
 
 func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration,
-	responseHandler websocketclientbase.ResponseHandler) {
+	responseHandler hs.ResponseHandler) {
 	periodStr := getPeriodString(period)
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	hb.SetHandler(
@@ -373,7 +373,7 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 		func() {
 			hb.Subscribe(symbol, periodStr, clientId)
 		},
-		responseHandler)
+		websocketclientbase.ResponseHandler(responseHandler))
 
 	hb.Connect(true)
 
@@ -386,7 +386,7 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 const CandlestickReqMaxLength = 300
 
 func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration,
-	responseHandler websocketclientbase.ResponseHandler) {
+	responseHandler hs.ResponseHandler) {
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	now := time.Now()
 	periodStr := getPeriodString(period)
@@ -397,7 +397,7 @@ func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, client
 			hb.Request(symbol, periodStr, start.Unix(), now.Unix(), clientId)
 			hb.Subscribe(symbol, periodStr, clientId)
 		},
-		responseHandler)
+		websocketclientbase.ResponseHandler(responseHandler))
 
 	hb.Connect(true)
 
@@ -408,7 +408,7 @@ func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, client
 }
 
 func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
-	responseHandler websocketclientbase.ResponseHandler) {
+	responseHandler hs.ResponseHandler) {
 	hb := new(orderwebsocketclient.SubscribeOrderWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 
 	hb.SetHandler(
@@ -421,7 +421,7 @@ func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
 				log.Fatalf("Authentication error, code: %d, message:%s", resp.Code, resp.Message)
 			}
 		},
-		responseHandler)
+		websocketclientbase.ResponseHandler(responseHandler))
 
 	hb.Connect(true)
 
