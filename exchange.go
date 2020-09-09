@@ -31,6 +31,7 @@ type RestAPIExchange interface {
 type ResponseHandler func(response interface{})
 
 type WsAPIExchange interface {
+	SubscribeOrder(ctx context.Context, symbol, clientId string, responseHandler ResponseHandler)
 	SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler ResponseHandler)
 	SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler ResponseHandler)
 }
