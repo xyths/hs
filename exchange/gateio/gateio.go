@@ -310,6 +310,10 @@ func (g *GateIO) CancelAllOrders(types string, currencyPair string) (res Respons
 	return
 }
 
+func (g *GateIO) GetOrderById(orderId uint64, symbol string) (order hs.Order, err error) {
+	return g.GetOrder(orderId, symbol)
+}
+
 // Get order status
 func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order hs.Order, err error) {
 	url := "/private/getOrder"

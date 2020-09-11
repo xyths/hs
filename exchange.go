@@ -25,6 +25,8 @@ type RestAPIExchange interface {
 	SellMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId int64, err error)
 	BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId int64, err error)
 	SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId int64, err error)
+
+	GetOrderById(orderId uint64, symbol string) (Order, error)
 	CancelOrder(symbol string, orderId uint64) error
 }
 
@@ -59,7 +61,7 @@ const (
 )
 
 type Order struct {
-	Id       uint64
+	Id            uint64
 	ClientOrderId string `bson:"clientOrderId"`
 
 	Type          string

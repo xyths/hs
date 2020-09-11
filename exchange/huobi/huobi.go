@@ -240,9 +240,9 @@ func (c *Client) CandleFrom(symbol, clientId string, period time.Duration, from,
 	return candles, nil
 }
 
-func (c *Client) GetOrderById(orderId string) (hs.Order, error) {
+func (c *Client) GetOrderById(orderId uint64, symbol string) (hs.Order, error) {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
-	r, err := hb.GetOrderById(orderId)
+	r, err := hb.GetOrderById(fmt.Sprint(orderId))
 	if err != nil {
 		return hs.Order{}, err
 	}
