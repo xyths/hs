@@ -240,7 +240,28 @@ func (c *Client) CandleFrom(symbol, clientId string, period time.Duration, from,
 	return candles, nil
 }
 
-func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (uint64, error) {
+func (c *Client) GetOrderById(orderId string) (hs.Order, error) {
+	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
+	r, err := hb.GetOrderById(orderId)
+	if err != nil {
+		return hs.Order{}, err
+	}
+	d := r.Data
+	o := hs.Order{
+		Id:            uint64(d.Id),
+		ClientOrderId: d.ClientOrderId,
+		Type:          d.Type,
+		Symbol:        d.Symbol,
+		InitialPrice:  decimal.RequireFromString(d.Price),
+		InitialAmount: decimal.RequireFromString(d.Amount),
+		Timestamp:     d.CreatedAt,
+		Status:        d.State,
+		FilledAmount:  decimal.RequireFromString(d.FilledAmount),
+	}
+	return o, nil
+}
+
+func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (int64, error) {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	resp, err := hb.PlaceOrder(request)
 	if err != nil {
@@ -249,7 +270,7 @@ func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (uint64, error) {
 	switch resp.Status {
 	case "ok":
 		log.Printf("Place order successfully, order id: %s, clientOrderId: %s\n", resp.Data, request.ClientOrderId)
-		return convert.StrToUint64(resp.Data), nil
+		return convert.StrToInt64(resp.Data), nil
 	case "error":
 		log.Printf("Place order error: %s\n", resp.ErrorMessage)
 		if resp.ErrorCode == "account-frozen-balance-insufficient-error" {
@@ -260,7 +281,7 @@ func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (uint64, error) {
 	return 0, errors.New("unknown status")
 }
 
-func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
+func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (int64, error) {
 	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
@@ -273,7 +294,7 @@ func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, 
 	return c.PlaceOrder(&request)
 }
 
-func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total decimal.Decimal) (uint64, error) {
+func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total decimal.Decimal) (int64, error) {
 	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
@@ -285,7 +306,7 @@ func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total 
 	return c.PlaceOrder(&request)
 }
 
-func (c *Client) SpotStopLimitOrder(orderType, symbol, clientOrderId, operator string, price, amount, stopPrice decimal.Decimal) (uint64, error) {
+func (c *Client) SpotStopLimitOrder(orderType, symbol, clientOrderId, operator string, price, amount, stopPrice decimal.Decimal) (int64, error) {
 	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
@@ -300,27 +321,27 @@ func (c *Client) SpotStopLimitOrder(orderType, symbol, clientOrderId, operator s
 	return c.PlaceOrder(&request)
 }
 
-func (c *Client) BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error) {
+func (c *Client) BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId int64, err error) {
 	return c.SpotLimitOrder(OrderTypeBuyLimit, symbol, clientOrderId, price, amount)
 }
 
-func (c *Client) SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error) {
+func (c *Client) SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId int64, err error) {
 	return c.SpotLimitOrder(OrderTypeSellLimit, symbol, clientOrderId, price, amount)
 }
 
-func (c *Client) BuyMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
+func (c *Client) BuyMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId int64, err error) {
 	return c.SpotMarketOrder(OrderTypeBuyMarket, symbol, clientOrderId, total)
 }
 
-func (c *Client) SellMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
+func (c *Client) SellMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId int64, err error) {
 	return c.SpotMarketOrder(OrderTypeSellMarket, symbol, clientOrderId, total)
 }
 
-func (c *Client) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
+func (c *Client) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId int64, err error) {
 	return c.SpotStopLimitOrder(OrderTypeBuyStopLimit, symbol, clientOrderId, "gte", price, amount, stopPrice)
 }
 
-func (c *Client) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
+func (c *Client) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId int64, err error) {
 	return c.SpotStopLimitOrder(OrderTypeSellStopLimit, symbol, clientOrderId, "lte", price, amount, stopPrice)
 }
 

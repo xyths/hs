@@ -18,13 +18,13 @@ type RestAPIExchange interface {
 	CandleBySize(symbol string, period time.Duration, size int) (Candle, error)
 	CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (Candle, error)
 
-	//PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error)
-	BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)
-	SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)
-	BuyMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error)
-	SellMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error)
-	BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error)
-	SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error)
+	//PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (int64, error)
+	BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId int64, err error)
+	SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId int64, err error)
+	BuyMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId int64, err error)
+	SellMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId int64, err error)
+	BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId int64, err error)
+	SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId int64, err error)
 	CancelOrder(symbol string, orderId uint64) error
 }
 
@@ -60,15 +60,15 @@ const (
 
 type Order struct {
 	Id       uint64
-	ClientId string `bson:"clientId"`
+	ClientOrderId string `bson:"clientOrderId"`
 
-	Type          OrderType
+	Type          string
 	Symbol        string
 	InitialPrice  decimal.Decimal `bson:"initialPrice"`
 	InitialAmount decimal.Decimal
 	Timestamp     int64
 
-	Status OrderStatus
+	Status string
 
 	FilledPrice  decimal.Decimal
 	FilledAmount decimal.Decimal

@@ -326,24 +326,11 @@ func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order hs.Ord
 	o := &res.Order
 	order.Id = convert.StrToUint64(o.OrderNumber)
 	order.Symbol = o.CurrencyPair
-	switch o.Type {
-	case "buy":
-		order.Type = hs.Buy
-	case "sell":
-		order.Type = hs.Sell
-	}
+	order.Type = o.Type
 	// 下单价格
 	order.InitialPrice = decimal.RequireFromString(o.InitialRate)
 	order.InitialAmount = decimal.RequireFromString(o.InitialAmount)
-	switch o.Status {
-	case "cancelled":
-		order.Status = hs.Cancelled
-	case "open":
-		order.Status = hs.Open
-	case "closed":
-		order.Status = hs.Closed
-		// TODO: filled
-	}
+	order.Status = o.Status
 	order.FilledPrice = decimal.RequireFromString(o.Rate)
 	order.FilledAmount = decimal.RequireFromString(o.FilledAmount)
 	//order.FeePercentage = o.FeePercentage
@@ -358,7 +345,7 @@ func (g *GateIO) IsOrderClose(symbol string, orderId uint64) (order hs.Order, cl
 	if err != nil {
 		return o, false
 	}
-	if o.Status == hs.Closed {
+	if o.Status == "closed" {
 		return o, true
 	}
 	return o, false
