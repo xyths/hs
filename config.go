@@ -62,6 +62,12 @@ type HistoryConf struct {
 	Interval string
 }
 
+type LogConf struct {
+	Level   string
+	Outputs []string
+	Errors  []string
+}
+
 func ParseJsonConfig(filename string, config interface{}) error {
 	configFile, err := os.Open(filename)
 	defer func() {
