@@ -1,6 +1,22 @@
 package exchange
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/shopspring/decimal"
+	"time"
+)
+
+const (
+	MIN1  = time.Minute
+	MIN5  = time.Minute * 5
+	MIN15 = time.Minute * 15
+	MIN30 = time.Minute * 30
+	HOUR1 = time.Hour
+	HOUR4 = time.Hour * 4
+	DAY1  = time.Hour * 24
+	MON1  = DAY1 * 30
+	WEEK1 = DAY1 * 7
+	YEAR1 = DAY1 * 365
+)
 
 type Ticker struct {
 	Id            int64

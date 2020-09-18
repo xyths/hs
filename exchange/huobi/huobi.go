@@ -17,6 +17,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/xyths/hs"
 	"github.com/xyths/hs/convert"
+	"github.com/xyths/hs/exchange"
 	"github.com/xyths/hs/logger"
 	"log"
 	"sort"
@@ -62,6 +63,48 @@ func New(label, accessKey, secretKey, host string) *Client {
 func (c *Client) GetTimestamp() (int, error) {
 	hb := new(client.CommonClient).Init(c.Host)
 	return hb.GetTimestamp()
+}
+
+func (c *Client) AllSymbols() (s []exchange.Symbol, err error) {
+	hb := new(client.CommonClient).Init(c.Host)
+	symbols, err := hb.GetSymbols()
+	if err != nil {
+		return
+	}
+	s = make([]exchange.Symbol, len(symbols))
+	for i, a := range symbols {
+		s[i] = exchange.Symbol{
+			Symbol:          a.Symbol,
+			BaseCurrency:    a.BaseCurrency,
+			QuoteCurrency:   a.QuoteCurrency,
+			AmountPrecision: int32(a.AmountPrecision),
+			PricePrecision:  int32(a.PricePrecision),
+			MinAmount:       a.MinOrderAmt,
+			MinTotal:        a.MinOrderValue,
+		}
+	}
+	return
+}
+
+func (c *Client) GetSymbol(symbol string) (s exchange.Symbol, err error) {
+	hb := new(client.CommonClient).Init(c.Host)
+	symbols, err := hb.GetSymbols()
+	if err != nil {
+		return
+	}
+	for _, a := range symbols {
+		if a.Symbol == symbol {
+			s.Symbol = a.Symbol
+			s.BaseCurrency = a.BaseCurrency
+			s.QuoteCurrency = a.QuoteCurrency
+			s.AmountPrecision = int32(a.AmountPrecision)
+			s.PricePrecision = int32(a.PricePrecision)
+			s.MinAmount = a.MinOrderAmt
+			s.MinTotal = a.MinOrderValue
+			break
+		}
+	}
+	return
 }
 
 func (c *Client) GetAccountInfo() ([]account.AccountInfo, error) {
@@ -240,14 +283,14 @@ func (c *Client) CandleFrom(symbol, clientId string, period time.Duration, from,
 	return candles, nil
 }
 
-func (c *Client) GetOrderById(orderId uint64, symbol string) (hs.Order, error) {
+func (c *Client) GetOrderById(orderId uint64, symbol string) (exchange.Order, error) {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	r, err := hb.GetOrderById(fmt.Sprint(orderId))
 	if err != nil {
-		return hs.Order{}, err
+		return exchange.Order{}, err
 	}
 	d := r.Data
-	o := hs.Order{
+	o := exchange.Order{
 		Id:            uint64(d.Id),
 		ClientOrderId: d.ClientOrderId,
 		Type:          d.Type,
@@ -261,7 +304,7 @@ func (c *Client) GetOrderById(orderId uint64, symbol string) (hs.Order, error) {
 	return o, nil
 }
 
-func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (int64, error) {
+func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (uint64, error) {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	resp, err := hb.PlaceOrder(request)
 	if err != nil {
@@ -270,7 +313,7 @@ func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (int64, error) {
 	switch resp.Status {
 	case "ok":
 		log.Printf("Place order successfully, order id: %s, clientOrderId: %s\n", resp.Data, request.ClientOrderId)
-		return convert.StrToInt64(resp.Data), nil
+		return convert.StrToUint64(resp.Data), nil
 	case "error":
 		log.Printf("Place order error: %s\n", resp.ErrorMessage)
 		if resp.ErrorCode == "account-frozen-balance-insufficient-error" {
@@ -281,7 +324,7 @@ func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (int64, error) {
 	return 0, errors.New("unknown status")
 }
 
-func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (int64, error) {
+func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error) {
 	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
@@ -294,7 +337,7 @@ func (c *Client) SpotLimitOrder(orderType, symbol, clientOrderId string, price, 
 	return c.PlaceOrder(&request)
 }
 
-func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total decimal.Decimal) (int64, error) {
+func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total decimal.Decimal) (uint64, error) {
 	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
@@ -306,7 +349,7 @@ func (c *Client) SpotMarketOrder(orderType, symbol, clientOrderId string, total 
 	return c.PlaceOrder(&request)
 }
 
-func (c *Client) SpotStopLimitOrder(orderType, symbol, clientOrderId, operator string, price, amount, stopPrice decimal.Decimal) (int64, error) {
+func (c *Client) SpotStopLimitOrder(orderType, symbol, clientOrderId, operator string, price, amount, stopPrice decimal.Decimal) (uint64, error) {
 	request := order.PlaceOrderRequest{
 		AccountId:     fmt.Sprintf("%d", c.SpotAccountId),
 		Type:          orderType,
@@ -321,27 +364,27 @@ func (c *Client) SpotStopLimitOrder(orderType, symbol, clientOrderId, operator s
 	return c.PlaceOrder(&request)
 }
 
-func (c *Client) BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId int64, err error) {
+func (c *Client) BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error) {
 	return c.SpotLimitOrder(OrderTypeBuyLimit, symbol, clientOrderId, price, amount)
 }
 
-func (c *Client) SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId int64, err error) {
+func (c *Client) SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error) {
 	return c.SpotLimitOrder(OrderTypeSellLimit, symbol, clientOrderId, price, amount)
 }
 
-func (c *Client) BuyMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId int64, err error) {
+func (c *Client) BuyMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
 	return c.SpotMarketOrder(OrderTypeBuyMarket, symbol, clientOrderId, total)
 }
 
-func (c *Client) SellMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId int64, err error) {
+func (c *Client) SellMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
 	return c.SpotMarketOrder(OrderTypeSellMarket, symbol, clientOrderId, total)
 }
 
-func (c *Client) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId int64, err error) {
+func (c *Client) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
 	return c.SpotStopLimitOrder(OrderTypeBuyStopLimit, symbol, clientOrderId, "gte", price, amount, stopPrice)
 }
 
-func (c *Client) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId int64, err error) {
+func (c *Client) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
 	return c.SpotStopLimitOrder(OrderTypeSellStopLimit, symbol, clientOrderId, "lte", price, amount, stopPrice)
 }
 
@@ -386,7 +429,7 @@ func (c *Client) SubscribeLast24hCandlestick(ctx context.Context, symbol, client
 }
 
 func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration,
-	responseHandler hs.ResponseHandler) {
+	responseHandler exchange.ResponseHandler) {
 	periodStr := getPeriodString(period)
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	hb.SetHandler(
@@ -407,7 +450,7 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 const CandlestickReqMaxLength = 300
 
 func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration,
-	responseHandler hs.ResponseHandler) {
+	responseHandler exchange.ResponseHandler) {
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	now := time.Now()
 	periodStr := getPeriodString(period)
@@ -429,7 +472,7 @@ func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, client
 }
 
 func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
-	responseHandler hs.ResponseHandler) {
+	responseHandler exchange.ResponseHandler) {
 	hb := new(orderwebsocketclient.SubscribeOrderWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 
 	hb.SetHandler(
@@ -539,25 +582,25 @@ func (c Client) splitTimestamp(period time.Duration, from, to time.Time) (timest
 
 func getPeriodString(period time.Duration) (periodStr string) {
 	switch period {
-	case hs.MIN1:
+	case exchange.MIN1:
 		periodStr = market.MIN1
-	case hs.MIN5:
+	case exchange.MIN5:
 		periodStr = market.MIN5
-	case hs.MIN15:
+	case exchange.MIN15:
 		periodStr = market.MIN15
-	case hs.MIN30:
+	case exchange.MIN30:
 		periodStr = market.MIN30
-	case hs.HOUR1:
+	case exchange.HOUR1:
 		periodStr = market.MIN60
-	case hs.HOUR4:
+	case exchange.HOUR4:
 		periodStr = market.HOUR4
-	case hs.DAY1:
+	case exchange.DAY1:
 		periodStr = market.DAY1
-	case hs.MON1:
+	case exchange.MON1:
 		periodStr = market.MON1
-	case hs.WEEK1:
+	case exchange.WEEK1:
 		periodStr = market.WEEK1
-	case hs.YEAR1:
+	case exchange.YEAR1:
 		periodStr = market.YEAR1
 	default:
 		logger.Sugar.Fatalf("bad period")

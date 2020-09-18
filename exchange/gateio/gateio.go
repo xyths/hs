@@ -54,6 +54,12 @@ func (g *GateIO) GetPairs() (string, error) {
 		return string(ret), err
 	}
 }
+func (g *GateIO) AllSymbols() (s []exchange.Symbol, err error) {
+	return nil, errors.New("Not implemented")
+}
+func (g *GateIO) GetSymbol(symbol string) (s exchange.Symbol, err error) {
+	return s, errors.New("Not implemented")
+}
 
 // Market Info
 //func (g *GateIO) marketinfo() string {
@@ -310,12 +316,12 @@ func (g *GateIO) CancelAllOrders(types string, currencyPair string) (res Respons
 	return
 }
 
-func (g *GateIO) GetOrderById(orderId uint64, symbol string) (order hs.Order, err error) {
+func (g *GateIO) GetOrderById(orderId uint64, symbol string) (order exchange.Order, err error) {
 	return g.GetOrder(orderId, symbol)
 }
 
 // Get order status
-func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order hs.Order, err error) {
+func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order exchange.Order, err error) {
 	url := "/private/getOrder"
 	param := fmt.Sprintf("orderNumber=%d&currencyPair=%s", orderNumber, currencyPair)
 	var res ResponseGetOrder
@@ -344,7 +350,7 @@ func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order hs.Ord
 	return
 }
 
-func (g *GateIO) IsOrderClose(symbol string, orderId uint64) (order hs.Order, closed bool) {
+func (g *GateIO) IsOrderClose(symbol string, orderId uint64) (order exchange.Order, closed bool) {
 	o, err := g.GetOrder(orderId, symbol)
 	if err != nil {
 		return o, false
@@ -394,7 +400,7 @@ func (g *GateIO) getSign(params string) string {
 
 /**
 *  http request
-*/
+ */
 func (g *GateIO) httpDo(method string, url string, param string) ([]byte, error) {
 	client := &http.Client{}
 	if method == GET {

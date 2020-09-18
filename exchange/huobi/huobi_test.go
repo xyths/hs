@@ -2,6 +2,7 @@ package huobi
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/huobirdcenter/huobi_golang/logging/applogger"
 	"github.com/huobirdcenter/huobi_golang/pkg/model/account"
@@ -20,9 +21,33 @@ func TestClient_GetTimestamp(t *testing.T) {
 	t.Logf("timestamp is: %d", timestamp)
 }
 
+func TestClient_AllSymbols(t *testing.T) {
+	c := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	symbols, err := c.AllSymbols()
+	require.NoError(t, err)
+	for _, s := range symbols {
+		str, err := json.MarshalIndent(s, "", "\t")
+		require.NoError(t, err)
+		t.Logf(" %s", str)
+	}
+}
+
+func TestClient_GetSymbol(t *testing.T) {
+	tests := []string{"btcusdt", "ethusdt"}
+	c := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+
+	for _, a := range tests {
+		s, err := c.GetSymbol(a)
+		require.NoError(t, err)
+		str, err := json.MarshalIndent(s, "", "\t")
+		require.NoError(t, err)
+		t.Logf(" %s", str)
+	}
+}
+
 func TestClient_GetAccountInfo(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
-	accounts, err := client.GetAccountInfo();
+	accounts, err := client.GetAccountInfo()
 	require.NoError(t, err)
 
 	for _, a := range accounts {
@@ -41,7 +66,7 @@ func TestClient_GetSpotAccountId(t *testing.T) {
 //	price := decimal.NewFromFloat(8000.1)
 //	amount := decimal.NewFromFloat(0.001)
 //	clientOrderId := fmt.Sprintf("%d", time.Now().Unix())
-//	orderId, err := client.PlaceOrder(OrderTypeBuyLimit, BTC_USDT, clientOrderId, price, amount)
+//	orderId, err := client.PlaceOrder(OrderTypeBuyLimit, "btcusdt", clientOrderId, price, amount)
 //	require.NoError(t, err)
 //	t.Logf("place buy order, id = %d", orderId)
 //}
@@ -50,7 +75,7 @@ func TestClient_SubscribeLast24hCandlestick(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
 	// Set the callback handlers
-	err := client.SubscribeLast24hCandlestick(context.Background(), BTC_USDT, "1608",
+	err := client.SubscribeLast24hCandlestick(context.Background(), "btcusdt", "1608",
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeLast24hCandlestickResponse)
 			if ok {
@@ -81,7 +106,7 @@ func TestClient_CandleFrom(t *testing.T) {
 	t.Run("300 candles till now", func(t *testing.T) {
 		to := time.Now()
 		from := to.Add(-1 * CandlestickReqMaxLength * period)
-		candle, err := client.CandleFrom(BTC_USDT, "1101", period, from, to)
+		candle, err := client.CandleFrom("btcusdt", "1101", period, from, to)
 		require.NoError(t, err)
 		t.Logf("candle length: %d", candle.Length())
 		for i := 1; i < candle.Length(); i++ {
@@ -93,7 +118,7 @@ func TestClient_CandleFrom(t *testing.T) {
 	t.Run("600 candles till now", func(t *testing.T) {
 		to := time.Now()
 		from := to.Add(-1 * 2 * CandlestickReqMaxLength * period)
-		candle, err := client.CandleFrom(BTC_USDT, "1101", period, from, to)
+		candle, err := client.CandleFrom("btcusdt", "1101", period, from, to)
 		require.NoError(t, err)
 		t.Logf("candle length: %d", candle.Length())
 		for i := 1; i < candle.Length(); i++ {
@@ -105,7 +130,7 @@ func TestClient_CandleFrom(t *testing.T) {
 	t.Run("1000 candles till now", func(t *testing.T) {
 		to := time.Now()
 		from := to.Add(-1000 * period)
-		candle, err := client.CandleFrom(BTC_USDT, "1101", period, from, to)
+		candle, err := client.CandleFrom("btcusdt", "1101", period, from, to)
 		require.NoError(t, err)
 		t.Logf("candle length: %d", candle.Length())
 		for i := 1; i < candle.Length(); i++ {
@@ -120,7 +145,7 @@ func TestClient_SubscribeCandlestick(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
 	// Set the callback handlers
-	client.SubscribeCandlestick(context.Background(), BTC_USDT, "1101", time.Minute,
+	client.SubscribeCandlestick(context.Background(), "btcusdt", "1101", time.Minute,
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
 			if ok {
@@ -150,7 +175,7 @@ func TestClient_SubscribeCandlestickWithReq(t *testing.T) {
 
 	// Set the callback handlers
 	//fmt.Sprintln(time.Now().Unix())
-	client.SubscribeCandlestickWithReq(context.Background(), BTC_USDT, "1111", time.Minute,
+	client.SubscribeCandlestickWithReq(context.Background(), "btcusdt", "1111", time.Minute,
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
 			if ok {
@@ -179,7 +204,7 @@ func TestClient_SubscribeOrder(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
 	// Set the callback handlers
-	client.SubscribeOrder(context.Background(), BTC_USDT, "a123",
+	client.SubscribeOrder(context.Background(), "btcusdt", "a123",
 		func(resp interface{}) {
 			subResponse, ok := resp.(order.SubscribeOrderV2Response)
 			if ok {
@@ -207,7 +232,7 @@ func TestClient_SubscribeAccountUpdate(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 
 	// Set the callback handlers
-	client.SubscribeOrder(context.Background(), BTC_USDT, fmt.Sprintln(time.Now().Unix()),
+	client.SubscribeOrder(context.Background(), "btcusdt", fmt.Sprintln(time.Now().Unix()),
 		func(resp interface{}) {
 			subResponse, ok := resp.(account.SubscribeAccountV2Response)
 			if ok {
@@ -220,7 +245,7 @@ func TestClient_SubscribeAccountUpdate(t *testing.T) {
 
 func TestClient_GetPrice(t *testing.T) {
 	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
-	price, err := client.LastPrice(BTC_USDT)
+	price, err := client.LastPrice("btcusdt")
 	require.NoError(t, err)
 	t.Logf("lastest BTC price is: %s", price)
 }
