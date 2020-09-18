@@ -40,7 +40,7 @@ type Client struct {
 	SpotAccountId int64
 }
 
-func New(label, accessKey, secretKey, host string) *Client {
+func New(label, accessKey, secretKey, host string) (*Client, error) {
 	c := &Client{
 		Label:     label,
 		AccessKey: accessKey,
@@ -55,9 +55,9 @@ func New(label, accessKey, secretKey, host string) *Client {
 	if err == nil {
 		c.SpotAccountId = accountId
 	} else {
-		log.Fatalf("error when get spot account id: %s", err)
+		return nil, err
 	}
-	return c
+	return c, nil
 }
 
 func (c *Client) GetTimestamp() (int, error) {
@@ -437,7 +437,8 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 		func() {
 			hb.Subscribe(symbol, periodStr, clientId)
 		},
-		websocketclientbase.ResponseHandler(responseHandler))
+		websocketclientbase.ResponseHandler(responseHandler),
+	)
 
 	hb.Connect(true)
 
