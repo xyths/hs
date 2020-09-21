@@ -151,6 +151,10 @@ func (c *Client) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 	}
 	balance := make(map[string]decimal.Decimal)
 	for _, b := range accountBalance.List {
+		// trade: 交易余额，frozen: 冻结余额
+		if b.Type != "trade" {
+			continue
+		}
 		nb, err := decimal.NewFromString(b.Balance)
 		if err != nil {
 			log.Printf("error when parse balance: %s", err)
@@ -442,10 +446,11 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 
 	hb.Connect(true)
 
-	<-ctx.Done()
-
-	hb.UnSubscribe(symbol, periodStr, clientId)
-	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+	select {
+	case <-ctx.Done():
+		hb.UnSubscribe(symbol, periodStr, clientId)
+		log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
+	}
 }
 
 const CandlestickReqMaxLength = 300
