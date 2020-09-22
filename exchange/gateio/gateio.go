@@ -55,10 +55,13 @@ func (g *GateIO) GetPairs() (string, error) {
 	}
 }
 func (g *GateIO) AllSymbols() (s []exchange.Symbol, err error) {
-	return nil, errors.New("Not implemented")
+	panic("Not implemented")
 }
 func (g *GateIO) GetSymbol(symbol string) (s exchange.Symbol, err error) {
-	return s, errors.New("Not implemented")
+	panic("Not implemented")
+}
+func (g *GateIO) GetFee(symbol string) (fee exchange.Fee, err error) {
+	panic("Not implemented")
 }
 
 // Market Info

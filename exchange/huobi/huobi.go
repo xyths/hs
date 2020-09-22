@@ -10,6 +10,7 @@ import (
 	"github.com/huobirdcenter/huobi_golang/pkg/client/marketwebsocketclient"
 	"github.com/huobirdcenter/huobi_golang/pkg/client/orderwebsocketclient"
 	"github.com/huobirdcenter/huobi_golang/pkg/client/websocketclientbase"
+	"github.com/huobirdcenter/huobi_golang/pkg/model"
 	"github.com/huobirdcenter/huobi_golang/pkg/model/account"
 	"github.com/huobirdcenter/huobi_golang/pkg/model/auth"
 	"github.com/huobirdcenter/huobi_golang/pkg/model/market"
@@ -103,6 +104,39 @@ func (c *Client) GetSymbol(symbol string) (s exchange.Symbol, err error) {
 			s.MinTotal = a.MinOrderValue
 			break
 		}
+	}
+	return
+}
+func (c *Client) GetFee(symbol string) (fee exchange.Fee, err error) {
+	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
+	request := new(model.GetRequest).Init()
+	request.AddParam("symbols", symbol)
+	resp, err := hb.GetTransactFeeRate(request)
+	if err != nil {
+		return
+	}
+	if resp.Code != 200 {
+		return fee, errors.New(resp.Message)
+	}
+	if len(resp.Data) == 0 {
+		return fee, errors.New("no fee return")
+	}
+	fee.Symbol = resp.Data[0].Symbol
+	fee.BaseMaker, err = decimal.NewFromString(resp.Data[0].MakerFeeRate)
+	if err != nil {
+		return
+	}
+	fee.BaseTaker, err = decimal.NewFromString(resp.Data[0].TakerFeeRate)
+	if err != nil {
+		return
+	}
+	fee.ActualMaker, err = decimal.NewFromString(resp.Data[0].ActualMakerRate)
+	if err != nil {
+		return
+	}
+	fee.ActualTaker, err = decimal.NewFromString(resp.Data[0].ActualTakerRate)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -299,8 +333,8 @@ func (c *Client) GetOrderById(orderId uint64, symbol string) (exchange.Order, er
 		ClientOrderId: d.ClientOrderId,
 		Type:          d.Type,
 		Symbol:        d.Symbol,
-		InitialPrice:  decimal.RequireFromString(d.Price),
-		InitialAmount: decimal.RequireFromString(d.Amount),
+		Price:         decimal.RequireFromString(d.Price),
+		Amount:        decimal.RequireFromString(d.Amount),
 		Timestamp:     d.CreatedAt,
 		Status:        d.State,
 		FilledAmount:  decimal.RequireFromString(d.FilledAmount),

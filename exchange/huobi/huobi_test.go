@@ -15,14 +15,16 @@ import (
 )
 
 func TestClient_GetTimestamp(t *testing.T) {
-	c := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	c, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 	timestamp, err := c.GetTimestamp()
 	require.NoError(t, err)
 	t.Logf("timestamp is: %d", timestamp)
 }
 
 func TestClient_AllSymbols(t *testing.T) {
-	c := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	c, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 	symbols, err := c.AllSymbols()
 	require.NoError(t, err)
 	for _, s := range symbols {
@@ -34,7 +36,8 @@ func TestClient_AllSymbols(t *testing.T) {
 
 func TestClient_GetSymbol(t *testing.T) {
 	tests := []string{"btcusdt", "ethusdt"}
-	c := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	c, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 
 	for _, a := range tests {
 		s, err := c.GetSymbol(a)
@@ -45,8 +48,19 @@ func TestClient_GetSymbol(t *testing.T) {
 	}
 }
 
+func TestClient_GetFee(t *testing.T) {
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
+	fee, err := client.GetFee("btcusdt")
+	require.NoError(t, err)
+	b, err := json.MarshalIndent(fee, "", "\t")
+	require.NoError(t, err)
+	t.Logf("got fee: %s", string(b))
+}
+
 func TestClient_GetAccountInfo(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 	accounts, err := client.GetAccountInfo()
 	require.NoError(t, err)
 
@@ -56,7 +70,8 @@ func TestClient_GetAccountInfo(t *testing.T) {
 }
 
 func TestClient_GetSpotAccountId(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 	t.Logf("spot account id is: %d", client.SpotAccountId)
 }
 
@@ -72,10 +87,11 @@ func TestClient_GetSpotAccountId(t *testing.T) {
 //}
 
 func TestClient_SubscribeLast24hCandlestick(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 
 	// Set the callback handlers
-	err := client.SubscribeLast24hCandlestick(context.Background(), "btcusdt", "1608",
+	err = client.SubscribeLast24hCandlestick(context.Background(), "btcusdt", "1608",
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeLast24hCandlestickResponse)
 			if ok {
@@ -101,7 +117,8 @@ func TestClient_SubscribeLast24hCandlestick(t *testing.T) {
 }
 
 func TestClient_CandleFrom(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 	period := 5 * time.Minute
 	t.Run("300 candles till now", func(t *testing.T) {
 		to := time.Now()
@@ -142,7 +159,8 @@ func TestClient_CandleFrom(t *testing.T) {
 }
 
 func TestClient_SubscribeCandlestick(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 
 	// Set the callback handlers
 	client.SubscribeCandlestick(context.Background(), "btcusdt", "1101", time.Minute,
@@ -171,7 +189,8 @@ func TestClient_SubscribeCandlestick(t *testing.T) {
 }
 
 func TestClient_SubscribeCandlestickWithReq(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 
 	// Set the callback handlers
 	//fmt.Sprintln(time.Now().Unix())
@@ -201,7 +220,8 @@ func TestClient_SubscribeCandlestickWithReq(t *testing.T) {
 }
 
 func TestClient_SubscribeOrder(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 
 	// Set the callback handlers
 	client.SubscribeOrder(context.Background(), "btcusdt", "a123",
@@ -229,7 +249,8 @@ func TestClient_SubscribeOrder(t *testing.T) {
 }
 
 func TestClient_SubscribeAccountUpdate(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 
 	// Set the callback handlers
 	client.SubscribeOrder(context.Background(), "btcusdt", fmt.Sprintln(time.Now().Unix()),
@@ -244,14 +265,16 @@ func TestClient_SubscribeAccountUpdate(t *testing.T) {
 }
 
 func TestClient_GetPrice(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 	price, err := client.LastPrice("btcusdt")
 	require.NoError(t, err)
 	t.Logf("lastest BTC price is: %s", price)
 }
 
 func TestClient_GetSpotBalance(t *testing.T) {
-	client := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	client, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
+	require.NoError(t, err)
 	balance, err := client.SpotAvailableBalance()
 	require.NoError(t, err)
 	for k, v := range balance {

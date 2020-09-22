@@ -11,3 +11,11 @@ type Symbol struct {
 	MinAmount       decimal.Decimal `json:"minAmount"`
 	MinTotal        decimal.Decimal `json:"minTotal"`
 }
+
+type Fee struct {
+	Symbol      string
+	BaseMaker   decimal.Decimal `json:"baseMaker"`
+	BaseTaker   decimal.Decimal `json:"baseTaker"`
+	ActualMaker decimal.Decimal `json:"actualMaker"`
+	ActualTaker decimal.Decimal `json:"actualTaker"`
+}

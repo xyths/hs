@@ -22,18 +22,17 @@ type Order struct {
 	Id            uint64 // Id should be uint64
 	ClientOrderId string `bson:"clientOrderId"`
 
-	Type          string
-	Symbol        string
-	InitialPrice  decimal.Decimal `bson:"initialPrice"`
-	InitialAmount decimal.Decimal
-	Timestamp     int64
+	Type      string
+	Symbol    string
+	Price     decimal.Decimal
+	Amount    decimal.Decimal
+	Timestamp int64
 
 	Status string
 
 	FilledPrice  decimal.Decimal
 	FilledAmount decimal.Decimal
 	Trades       []Trade
-	Fee          map[string]decimal.Decimal
 }
 
 type Trade struct {
