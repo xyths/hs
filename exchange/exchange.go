@@ -12,6 +12,7 @@ type RestAPIExchange interface {
 	AllSymbols() (s []Symbol, err error)
 	GetSymbol(symbol string) (Symbol, error)
 	GetFee(symbol string) (fee Fee, err error)
+	SpotBalance() (map[string]decimal.Decimal, error)
 	SpotAvailableBalance() (map[string]decimal.Decimal, error)
 	LastPrice(symbol string) (decimal.Decimal, error)
 	CandleBySize(symbol string, period time.Duration, size int) (hs.Candle, error)

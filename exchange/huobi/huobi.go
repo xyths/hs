@@ -177,6 +177,31 @@ func (c *Client) LastPrice(symbol string) (decimal.Decimal, error) {
 	return decimal.NewFromFloat(0), nil
 }
 
+func (c *Client) SpotBalance() (map[string]decimal.Decimal, error) {
+	hb := new(client.AccountClient).Init(c.AccessKey, c.SecretKey, c.Host)
+	accountBalance, err := hb.GetAccountBalance(fmt.Sprintf("%d", c.SpotAccountId))
+	if err != nil {
+		return nil, err
+	}
+	balance := make(map[string]decimal.Decimal)
+	for _, b := range accountBalance.List {
+		nb, err := decimal.NewFromString(b.Balance)
+		if err != nil {
+			log.Printf("error when parse balance: %s", err)
+			continue
+		}
+		if nb.IsZero() {
+			continue
+		}
+		if ob, ok := balance[b.Currency]; ok {
+			balance[b.Currency] = ob.Add(nb)
+		} else {
+			balance[b.Currency] = nb
+		}
+	}
+	return balance, nil
+}
+
 func (c *Client) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 	hb := new(client.AccountClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	accountBalance, err := hb.GetAccountBalance(fmt.Sprintf("%d", c.SpotAccountId))

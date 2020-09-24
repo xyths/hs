@@ -204,6 +204,44 @@ func (g *GateIO) TradeHistory(params string) (string, error) {
 }
 
 // Get account fund balances
+func (g *GateIO) SpotBalance() (map[string]decimal.Decimal, error) {
+	url := "/private/balances"
+	param := ""
+	data, err := g.httpDo(POST, url, param)
+	if err != nil {
+		return nil, err
+	}
+	var result ResponseBalances
+	if err = json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+	balance := make(map[string]decimal.Decimal)
+	for k, v := range result.Available {
+		b := decimal.RequireFromString(v)
+		if b.IsZero() {
+			continue
+		}
+		if ob, ok := balance[k]; ok {
+			balance[k] = ob.Add(b)
+		} else {
+			balance[k] = b
+		}
+	}
+	for k, v := range result.Locked {
+		b := decimal.RequireFromString(v)
+		if b.IsZero() {
+			continue
+		}
+		if ob, ok := balance[k]; ok {
+			balance[k] = ob.Add(b)
+		} else {
+			balance[k] = b
+		}
+	}
+	return balance, nil
+}
+
+// Get account fund balances
 func (g *GateIO) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 	url := "/private/balances"
 	param := ""
