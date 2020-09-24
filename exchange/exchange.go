@@ -9,6 +9,7 @@ import (
 
 // common exchange interface for all symbols
 type RestAPIExchange interface {
+	FormatSymbol(base, quote string) string
 	AllSymbols() (s []Symbol, err error)
 	GetSymbol(symbol string) (Symbol, error)
 	GetFee(symbol string) (fee Fee, err error)
