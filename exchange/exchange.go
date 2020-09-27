@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"context"
 	"github.com/shopspring/decimal"
 	"github.com/xyths/hs"
 	"time"
@@ -34,9 +33,12 @@ type RestAPIExchange interface {
 type ResponseHandler func(response interface{})
 
 type WsAPIExchange interface {
-	SubscribeOrder(ctx context.Context, symbol, clientId string, responseHandler ResponseHandler)
-	SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler ResponseHandler)
-	SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration, responseHandler ResponseHandler)
+	SubscribeOrder(symbol, clientId string, responseHandler ResponseHandler)
+	UnsubscribeOrder(symbol, clientId string)
+	SubscribeCandlestick(symbol, clientId string, period time.Duration, responseHandler ResponseHandler)
+	UnsubscribeCandlestick(symbol, clientId string, period time.Duration)
+	SubscribeCandlestickWithReq(symbol, clientId string, period time.Duration, responseHandler ResponseHandler)
+	UnsubscribeCandlestickWithReq(symbol, clientId string, period time.Duration)
 }
 
 // common exchange interface, for all symbols, all crypto-exchanges

@@ -28,7 +28,6 @@ import (
 )
 
 const (
-	Name        = "huobi"
 	DefaultHost = "api.huobi.me"
 )
 
@@ -346,7 +345,7 @@ func (c *Client) CandleFrom(symbol, clientId string, period time.Duration, from,
 	return candles, nil
 }
 
-func (c *Client) GetOrderById(orderId uint64, symbol string) (exchange.Order, error) {
+func (c *Client) GetOrderById(orderId uint64, _ string) (exchange.Order, error) {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	r, err := hb.GetOrderById(fmt.Sprint(orderId))
 	if err != nil {
@@ -451,7 +450,7 @@ func (c *Client) SellStopLimit(symbol, clientOrderId string, price, amount, stop
 	return c.SpotStopLimitOrder(OrderTypeSellStopLimit, symbol, clientOrderId, "lte", price, amount, stopPrice)
 }
 
-func (c *Client) CancelOrder(symbol string, orderId uint64) error {
+func (c *Client) CancelOrder(_ string, orderId uint64) error {
 	hb := new(client.OrderClient).Init(c.AccessKey, c.SecretKey, c.Host)
 	resp, err := hb.CancelOrderById(fmt.Sprintf("%d", orderId))
 	if err != nil {
@@ -491,7 +490,7 @@ func (c *Client) SubscribeLast24hCandlestick(ctx context.Context, symbol, client
 	return nil
 }
 
-func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId string, period time.Duration,
+func (c *Client) SubscribeCandlestick(symbol, clientId string, period time.Duration,
 	responseHandler exchange.ResponseHandler) {
 	periodStr := getPeriodString(period)
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
@@ -504,17 +503,17 @@ func (c *Client) SubscribeCandlestick(ctx context.Context, symbol, clientId stri
 	)
 
 	hb.Connect(true)
+}
 
-	select {
-	case <-ctx.Done():
-		hb.UnSubscribe(symbol, periodStr, clientId)
-		log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
-	}
+func (c *Client) UnsubscribeCandlestick(symbol, clientId string, period time.Duration) {
+	periodStr := getPeriodString(period)
+	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
+	hb.UnSubscribe(symbol, periodStr, clientId)
 }
 
 const CandlestickReqMaxLength = 300
 
-func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, clientId string, period time.Duration,
+func (c *Client) SubscribeCandlestickWithReq(symbol, clientId string, period time.Duration,
 	responseHandler exchange.ResponseHandler) {
 	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
 	now := time.Now()
@@ -529,15 +528,14 @@ func (c *Client) SubscribeCandlestickWithReq(ctx context.Context, symbol, client
 		websocketclientbase.ResponseHandler(responseHandler))
 
 	hb.Connect(true)
-
-	<-ctx.Done()
-
+}
+func (c *Client) UnsubscribeCandlestickWithReq(symbol, clientId string, period time.Duration) {
+	hb := new(marketwebsocketclient.CandlestickWebSocketClient).Init(c.Host)
+	periodStr := getPeriodString(period)
 	hb.UnSubscribe(symbol, periodStr, clientId)
-	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 }
 
-func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
-	responseHandler exchange.ResponseHandler) {
+func (c *Client) SubscribeOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
 	hb := new(orderwebsocketclient.SubscribeOrderWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 
 	hb.SetHandler(
@@ -553,15 +551,13 @@ func (c *Client) SubscribeOrder(ctx context.Context, symbol, clientId string,
 		websocketclientbase.ResponseHandler(responseHandler))
 
 	hb.Connect(true)
-
-	<-ctx.Done()
-
+}
+func (c *Client) UnsubscribeOrder(symbol, clientId string) {
+	hb := new(orderwebsocketclient.SubscribeOrderWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 	hb.UnSubscribe(symbol, clientId)
-	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 }
 
-func (c *Client) SubscribeAccountUpdate(ctx context.Context, symbol, clientId string,
-	responseHandler websocketclientbase.ResponseHandler) error {
+func (c *Client) SubscribeAccountUpdate(clientId string, responseHandler websocketclientbase.ResponseHandler) {
 	hb := new(accountwebsocketclient.SubscribeAccountWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 
 	hb.SetHandler(
@@ -577,16 +573,14 @@ func (c *Client) SubscribeAccountUpdate(ctx context.Context, symbol, clientId st
 		responseHandler)
 
 	hb.Connect(true)
-
-	<-ctx.Done()
-
-	hb.UnSubscribe("1", clientId)
-	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
-
-	return nil
 }
 
-func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId string,
+func (c *Client) UnsubscribeAccountUpdate(clientId string) {
+	hb := new(accountwebsocketclient.SubscribeAccountWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
+	hb.UnSubscribe("1", clientId)
+}
+
+func (c *Client) SubscribeTradeClear(symbol, clientId string,
 	responseHandler websocketclientbase.ResponseHandler) {
 	hb := new(orderwebsocketclient.SubscribeTradeClearWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 
@@ -603,40 +597,14 @@ func (c *Client) SubscribeTradeClear(ctx context.Context, symbol, clientId strin
 		responseHandler)
 
 	hb.Connect(true)
+}
 
-	<-ctx.Done()
-
+func (c *Client) UnsubscribeTradeClear(symbol, clientId string) {
+	hb := new(orderwebsocketclient.SubscribeTradeClearWebSocketV2Client).Init(c.AccessKey, c.SecretKey, c.Host)
 	hb.UnSubscribe(symbol, clientId)
-	log.Printf("UnSubscribed, symbol = %s, clientId = %s", symbol, clientId)
 }
 
 func (c Client) splitTimestamp(period time.Duration, from, to time.Time) (timestamps []int64) {
-	//var d time.Duration
-	//switch period {
-	//case market.MIN1:
-	//	d = time.Minute
-	//case market.MIN5:
-	//	d = time.Minute * 5
-	//case market.MIN15:
-	//	d = time.Minute * 15
-	//case market.MIN30:
-	//	d = time.Minute * 30
-	//case market.MIN60:
-	//	d = time.Hour
-	//case market.HOUR4:
-	//	d = time.Hour * 4
-	//case market.DAY1:
-	//	d = time.Hour * 24
-	//case market.MON1:
-	//	d = time.Hour * 24 * 30
-	//case market.WEEK1:
-	//	d = time.Hour * 24 * 7
-	//case market.YEAR1:
-	//	d = time.Hour * 24 * 365
-	//default:
-	//	d = time.Hour * 24
-	//}
-
 	for t := from; t.Before(to); t = t.Add(period * CandlestickReqMaxLength) {
 		timestamps = append(timestamps, t.Unix())
 	}
