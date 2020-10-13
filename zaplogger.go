@@ -5,15 +5,15 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewZapLogger(level string, outputPaths, errorPaths []string) (*zap.Logger, error) {
+func NewZapLogger(conf LogConf) (*zap.Logger, error) {
 	l := new(zapcore.Level)
-	if err := l.Set(level); err != nil {
+	if err := l.Set(conf.Level); err != nil {
 		return nil, err
 	}
 	cfg := zap.Config{
 		Level:            zap.NewAtomicLevelAt(*l),
-		OutputPaths:      outputPaths,
-		ErrorOutputPaths: errorPaths,
+		OutputPaths:      conf.Outputs,
+		ErrorOutputPaths: conf.Errors,
 		Development:      true,
 		Encoding:         "console",
 		EncoderConfig:    zap.NewDevelopmentEncoderConfig(),
