@@ -7,12 +7,18 @@ const (
 	BTC3L_USDT = "btc3l_usdt"
 	BTC3S_USDT = "btc3s_usdt"
 	SERO_USDT  = "sero_usdt"
+	ETH_USDT   = "eth_usdt"
 
 	BTC   = "BTC"
 	BTC3L = "BTC3L"
 	BTC3S = "BTC3S"
 	USDT  = "USDT"
 	SERO  = "SERO"
+	ETH   = "ETH"
+
+	DefaultMinTotal = 1
+	DefaultMaker = 0.002
+	DefaultTaker = 0.002
 )
 
 var (
@@ -21,25 +27,29 @@ var (
 		BTC3L_USDT: 4,
 		BTC3S_USDT: 4,
 		SERO_USDT:  5,
+		ETH_USDT:   2,
 	}
 	AmountPrecision = map[string]int32{
 		BTC_USDT:   4,
 		BTC3L_USDT: 3,
 		BTC3S_USDT: 3,
 		SERO_USDT:  3,
+		ETH_USDT:   4,
 	}
 	MinAmount = map[string]float64{
 		BTC_USDT:   0.0001,
 		BTC3L_USDT: 0.001,
 		BTC3S_USDT: 0.001,
 		SERO_USDT:  0.001,
+		ETH_USDT:   0.0001,
 	}
-	MinTotal = map[string]float64{
-		BTC_USDT:   1,
-		BTC3L_USDT: 1,
-		BTC3S_USDT: 1,
-		SERO_USDT:  1,
-	}
+	//MinTotal = map[string]float64{
+	//	BTC_USDT:   1,
+	//	BTC3L_USDT: 1,
+	//	BTC3S_USDT: 1,
+	//	SERO_USDT:  1,
+	//	ETH_USDT:   1,
+	//}
 )
 
 // used by buy/sell
@@ -75,5 +85,5 @@ func (g GateIO) MinAmount(symbol string) decimal.Decimal {
 }
 
 func (g GateIO) MinTotal(symbol string) decimal.Decimal {
-	return decimal.NewFromFloat(MinTotal[symbol])
+	return decimal.NewFromFloat(DefaultMinTotal)
 }

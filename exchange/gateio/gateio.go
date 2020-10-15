@@ -58,10 +58,31 @@ func (g *GateIO) AllSymbols() (s []exchange.Symbol, err error) {
 	panic("Not implemented")
 }
 func (g *GateIO) GetSymbol(symbol string) (s exchange.Symbol, err error) {
-	panic("Not implemented")
+	s.Symbol = symbol
+	switch symbol {
+	case BTC_USDT:
+		s.BaseCurrency = BTC
+		s.QuoteCurrency = USDT
+	case SERO_USDT:
+		s.BaseCurrency = SERO
+		s.QuoteCurrency = USDT
+	case ETH:
+		s.BaseCurrency = ETH
+		s.QuoteCurrency = USDT
+	}
+	s.PricePrecision = PricePrecision[symbol]
+	s.AmountPrecision = AmountPrecision[symbol]
+	s.MinAmount = decimal.NewFromFloat(MinAmount[symbol])
+	s.MinTotal = decimal.NewFromFloat(DefaultMinTotal)
+	return
 }
 func (g *GateIO) GetFee(symbol string) (fee exchange.Fee, err error) {
-	panic("Not implemented")
+	fee.Symbol = symbol
+	fee.BaseMaker = decimal.NewFromFloat(DefaultMaker)
+	fee.BaseTaker = decimal.NewFromFloat(DefaultTaker)
+	fee.ActualMaker = fee.BaseMaker
+	fee.ActualTaker = fee.BaseTaker
+	return
 }
 
 // Market Info
