@@ -186,7 +186,7 @@ func (g *GateIO) GetCandle(symbol string, groupSec, rangeHour int) (candles hs.C
 	for i := 0; i < len(result.Data); i++ {
 		c := result.Data[i]
 		candles.Append(hs.Ticker{
-			Timestamp: int64(c[0]),
+			Timestamp: int64(c[0] / 1000), // covert ms to s
 			Volume:    c[1],
 			Close:     c[2],
 			High:      c[3],
