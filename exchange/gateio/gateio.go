@@ -164,7 +164,7 @@ func (g *GateIO) OrderBook(symbol string) (ResponseOrderBook, error) {
 // 获取Candle
 func (g *GateIO) CandleBySize(symbol string, period time.Duration, size int) (candle hs.Candle, err error) {
 	groupSec := int(period.Seconds())
-	rangeHour := size / int(time.Hour/period)
+	rangeHour := int(int64(size) * int64(period) / int64(time.Hour))
 	return g.GetCandle(symbol, groupSec, rangeHour)
 }
 
