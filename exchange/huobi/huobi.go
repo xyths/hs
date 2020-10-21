@@ -239,6 +239,12 @@ func (cs CandleSlice) Swap(i, j int) {
 	cs[i], cs[j] = cs[j], cs[i]
 }
 func (cs CandleSlice) Less(i, j int) bool {
+	if cs[i].Length() == 0 {
+		return true
+	}
+	if cs[j].Length() == 0 {
+		return false
+	}
 	return cs[i].Timestamp[0] < cs[j].Timestamp[0]
 }
 
