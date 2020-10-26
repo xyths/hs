@@ -163,7 +163,7 @@ func TestClient_SubscribeCandlestick(t *testing.T) {
 	require.NoError(t, err)
 
 	// Set the callback handlers
-	client.SubscribeCandlestick(context.Background(), "btcusdt", "1101", time.Minute,
+	client.SubscribeCandlestick("btcusdt", "1101", time.Minute,
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
 			if ok {
@@ -194,7 +194,7 @@ func TestClient_SubscribeCandlestickWithReq(t *testing.T) {
 
 	// Set the callback handlers
 	//fmt.Sprintln(time.Now().Unix())
-	client.SubscribeCandlestickWithReq(context.Background(), "btcusdt", "1111", time.Minute,
+	client.SubscribeCandlestickWithReq("btcusdt", "1111", time.Minute,
 		func(resp interface{}) {
 			candlestickResponse, ok := resp.(market.SubscribeCandlestickResponse)
 			if ok {
@@ -224,7 +224,7 @@ func TestClient_SubscribeOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	// Set the callback handlers
-	client.SubscribeOrder(context.Background(), "btcusdt", "a123",
+	client.SubscribeOrder("btcusdt", "a123",
 		func(resp interface{}) {
 			subResponse, ok := resp.(order.SubscribeOrderV2Response)
 			if ok {
@@ -253,7 +253,7 @@ func TestClient_SubscribeAccountUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Set the callback handlers
-	client.SubscribeOrder(context.Background(), "btcusdt", fmt.Sprintln(time.Now().Unix()),
+	client.SubscribeOrder("btcusdt", fmt.Sprintln(time.Now().Unix()),
 		func(resp interface{}) {
 			subResponse, ok := resp.(account.SubscribeAccountV2Response)
 			if ok {
