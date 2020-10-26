@@ -407,15 +407,12 @@ func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order exchan
 	return
 }
 
-func (g *GateIO) IsOrderClose(symbol string, orderId uint64) (order exchange.Order, closed bool) {
+func (g *GateIO) IsFullFilled(symbol string, orderId uint64) (bool, error) {
 	o, err := g.GetOrder(orderId, symbol)
 	if err != nil {
-		return o, false
+		return false, err
 	}
-	if o.Status == "closed" {
-		return o, true
-	}
-	return o, false
+	return o.Status == "closed", nil
 }
 
 // Get my open order list
