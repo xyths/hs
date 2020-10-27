@@ -446,12 +446,13 @@ func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order exchan
 	return
 }
 
-func (g *GateIO) IsFullFilled(symbol string, orderId uint64) (bool, error) {
-	o, err := g.GetOrder(orderId, symbol)
+func (g *GateIO) IsFullFilled(symbol string, orderId uint64) (order exchange.Order, filled bool, err error) {
+	order, err = g.GetOrder(orderId, symbol)
 	if err != nil {
-		return false, err
+		return
 	}
-	return o.Status == "closed", nil
+	filled = order.Status == "closed"
+	return
 }
 
 // Get my open order list

@@ -28,7 +28,7 @@ type RestAPIExchange interface {
 
 	GetOrderById(orderId uint64, symbol string) (Order, error)
 	CancelOrder(symbol string, orderId uint64) error
-	IsFullFilled(symbol string, orderId uint64) (bool, error)
+	IsFullFilled(symbol string, orderId uint64) (Order, bool, error)
 }
 
 type ResponseHandler func(response interface{})

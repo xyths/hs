@@ -372,12 +372,13 @@ func (c *Client) GetOrderById(orderId uint64, _ string) (exchange.Order, error) 
 	return o, nil
 }
 
-func (c *Client) IsFullFilled(symbol string, orderId uint64) (bool, error) {
-	o, err := c.GetOrderById(orderId, symbol)
+func (c *Client) IsFullFilled(symbol string, orderId uint64) (order exchange.Order, filled bool, err error) {
+	order, err = c.GetOrderById(orderId, symbol)
 	if err != nil {
-		return false, err
+		return
 	}
-	return o.Status == "filled", nil
+	filled = order.Status == "filled"
+	return
 }
 
 func (c *Client) PlaceOrder(request *order.PlaceOrderRequest) (uint64, error) {
