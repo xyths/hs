@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xyths/hs/exchange"
 	"os"
+	"strconv"
 	"testing"
 )
 
@@ -95,4 +96,41 @@ func TestGateIO_GetSymbol(t *testing.T) {
 			}
 		})
 	}
+}
+
+// apiKey=xxx secretKey=yyy symbol=aaa order=1111 go test -test.v -test.run TestGateIO_GetOrderString ./gateio
+func TestGateIO_GetOrderString(t *testing.T) {
+	apiKey := os.Getenv("apiKey")
+	secretKey := os.Getenv("secretKey")
+	host := os.Getenv("host")
+	symbol := os.Getenv("symbol")
+	orderId_ := os.Getenv("order")
+	id, err := strconv.ParseUint(orderId_, 10, 64)
+	require.NoError(t, err)
+	t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
+	g := New(apiKey, secretKey, host)
+
+	order, err := g.GetOrderString(id, symbol)
+	require.NoError(t, err)
+	require.NoError(t, err)
+	t.Logf("order is %s", order)
+}
+
+// apiKey=xxx secretKey=yyy symbol=aaa order=1111 go test -test.v -test.run TestGateIO_GetOrder ./gateio
+func TestGateIO_GetOrder(t *testing.T) {
+	apiKey := os.Getenv("apiKey")
+	secretKey := os.Getenv("secretKey")
+	host := os.Getenv("host")
+	symbol := os.Getenv("symbol")
+	orderId_ := os.Getenv("order")
+	id, err := strconv.ParseUint(orderId_, 10, 64)
+	require.NoError(t, err)
+	t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
+	g := New(apiKey, secretKey, host)
+
+	order, err := g.GetOrder(id, symbol)
+	require.NoError(t, err)
+	b, err := json.MarshalIndent(order, "", "\t")
+	require.NoError(t, err)
+	t.Logf("order is %s", string(b))
 }

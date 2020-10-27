@@ -75,6 +75,7 @@ type ResponseCancel struct {
 
 type RawOrderInGetOrder struct {
 	OrderNumber  string
+	Text         string
 	Status       string // 订单状态 open已挂单 cancelled已取消 closed已完成
 	CurrencyPair string `json:"currencyPair"`
 	Type         string // sell, buy
@@ -155,8 +156,8 @@ type ResponseOrderBook struct {
 }
 
 type RawSymbol struct {
-	PricePrecision  int32     `json:"decimal_places"`
-	AmountPrecision int32     `json:"amount_decimal_places"`
+	PricePrecision  int32   `json:"decimal_places"`
+	AmountPrecision int32   `json:"amount_decimal_places"`
 	MinAmount       float64 `json:"min_amount"`
 	MinAmountA      float64 `json:"min_amount_a"`
 	MinAmountB      float64 `json:"min_amount_b"`

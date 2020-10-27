@@ -416,10 +416,22 @@ func (g *GateIO) GetOrderById(orderId uint64, symbol string) (order exchange.Ord
 	return g.GetOrder(orderId, symbol)
 }
 
-// Get order status
-func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order exchange.Order, err error) {
+// Get order as string, just for test gate's getOrder interface, only use in gateio_test.go
+func (g *GateIO) GetOrderString(orderId uint64, symbol string) (string, error) {
 	url := "/private/getOrder"
-	param := fmt.Sprintf("orderNumber=%d&currencyPair=%s", orderNumber, currencyPair)
+	param := fmt.Sprintf("orderNumber=%d&currencyPair=%s", orderId, symbol)
+	data, err := g.httpDo(POST, url, param)
+	if err != nil {
+		return "", err
+	} else {
+		return string(data), err
+	}
+}
+
+// Get order status
+func (g *GateIO) GetOrder(orderId uint64, symbol string) (order exchange.Order, err error) {
+	url := "/private/getOrder"
+	param := fmt.Sprintf("orderNumber=%d&currencyPair=%s", orderId, symbol)
 	var res ResponseGetOrder
 	err = g.request(POST, url, param, &res)
 	if err != nil {
@@ -431,6 +443,7 @@ func (g *GateIO) GetOrder(orderNumber uint64, currencyPair string) (order exchan
 	}
 	o := &res.Order
 	order.Id = convert.StrToUint64(o.OrderNumber)
+	order.ClientOrderId = o.Text
 	order.Symbol = o.CurrencyPair
 	order.Type = o.Type
 	// 下单价格
