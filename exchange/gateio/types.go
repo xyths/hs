@@ -153,3 +153,20 @@ type ResponseOrderBook struct {
 	Asks   []Quote
 	Bids   []Quote
 }
+
+type RawSymbol struct {
+	PricePrecision  int32     `json:"decimal_places"`
+	AmountPrecision int32     `json:"amount_decimal_places"`
+	MinAmount       float64 `json:"min_amount"`
+	MinAmountA      float64 `json:"min_amount_a"`
+	MinAmountB      float64 `json:"min_amount_b"`
+	Fee             float64 `json:"fee"`
+	TradeDisabled   int     `json:"trade_disabled"`
+	BuyDisabled     int     `json:"buy_disabled"`
+	SellDisabled    int     `json:"sell_disabled"`
+}
+
+type ResponseMarketInfo struct {
+	Result string
+	Pairs  []map[string]RawSymbol
+}

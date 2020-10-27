@@ -45,37 +45,68 @@ const (
 )
 
 // all support pairs
-func (g *GateIO) GetPairs() (string, error) {
+func (g *GateIO) GetPairs() (pairs []string, err error) {
+	var method string = "GET"
 	url := "/pairs"
 	param := ""
-	if ret, err := g.httpDo(GET, url, param); err != nil {
-		return "", err
-	} else {
-		return string(ret), err
-	}
-}
-func (g *GateIO) AllSymbols() (s []exchange.Symbol, err error) {
-	panic("Not implemented")
-}
-func (g *GateIO) GetSymbol(symbol string) (s exchange.Symbol, err error) {
-	s.Symbol = symbol
-	switch symbol {
-	case BTC_USDT:
-		s.BaseCurrency = BTC
-		s.QuoteCurrency = USDT
-	case SERO_USDT:
-		s.BaseCurrency = SERO
-		s.QuoteCurrency = USDT
-	case ETH:
-		s.BaseCurrency = ETH
-		s.QuoteCurrency = USDT
-	}
-	s.PricePrecision = PricePrecision[symbol]
-	s.AmountPrecision = AmountPrecision[symbol]
-	s.MinAmount = decimal.NewFromFloat(MinAmount[symbol])
-	s.MinTotal = decimal.NewFromFloat(DefaultMinTotal)
+	err = g.request(method, url, param, &pairs)
 	return
 }
+
+func (g *GateIO) AllSymbols() (symbols []exchange.Symbol, err error) {
+	infos, err := g.MarketInfo()
+	if err != nil {
+		return
+	}
+	for _, stupidMap := range infos.Pairs {
+		for symbol, info := range stupidMap {
+			base, quote := cutSymbol(symbol)
+			symbols = append(symbols, exchange.Symbol{
+				Symbol:          symbol,
+				BaseCurrency:    base,
+				QuoteCurrency:   quote,
+				PricePrecision:  info.PricePrecision,
+				AmountPrecision: info.AmountPrecision,
+				MinAmount:       decimal.NewFromFloat(info.MinAmount),
+				MinTotal:        decimal.NewFromFloat(info.MinAmountB),
+			})
+		}
+	}
+	return
+}
+
+func cutSymbol(symbol string) (base, quote string) {
+	tokens := strings.Split(symbol, "_")
+	if len(tokens) == 2 {
+		base = strings.ToUpper(tokens[0])
+		quote = strings.ToUpper(tokens[1])
+	}
+	return
+}
+
+func (g *GateIO) GetSymbol(symbol string) (s exchange.Symbol, err error) {
+	all, err := g.AllSymbols()
+	if err != nil {
+		return
+	}
+	for _, s_ := range all {
+		if s_.Symbol == symbol {
+			s = s_
+			break
+		}
+	}
+	return
+}
+
+func (g *GateIO) PricePrecision(symbol string) (precision int32, err error) {
+	s, err := g.GetSymbol(symbol)
+	if err != nil {
+		return
+	}
+	precision = s.PricePrecision
+	return
+}
+
 func (g *GateIO) GetFee(symbol string) (fee exchange.Fee, err error) {
 	fee.Symbol = symbol
 	fee.BaseMaker = decimal.NewFromFloat(DefaultMaker)
@@ -86,14 +117,14 @@ func (g *GateIO) GetFee(symbol string) (fee exchange.Fee, err error) {
 }
 
 // Market Info
-//func (g *GateIO) marketinfo() string {
-//	var method string = "GET"
-//	url :=  "/marketinfo"
-//	param := ""
-//	var ret string = g.httpDo(method, url, param)
-//	return ret
-//}
-//
+func (g *GateIO) MarketInfo() (res ResponseMarketInfo, err error) {
+	var method string = "GET"
+	url := "/marketinfo"
+	param := ""
+	err = g.request(method, url, param, &res)
+	return
+}
+
 //// Market Details
 //func (g *GateIO) marketlist() string {
 //	var method string = "GET"
@@ -334,7 +365,11 @@ func (g *GateIO) BuyMarket(symbol, clientOrderId string, amount decimal.Decimal)
 	if err != nil {
 		return
 	}
-	price = price.Round(g.PricePrecision(symbol))
+	precision, err := g.PricePrecision(symbol)
+	if err != nil {
+		return
+	}
+	price = price.Round(precision)
 	return g.BuyLimit(symbol, clientOrderId, price, amount)
 }
 
@@ -343,7 +378,11 @@ func (g *GateIO) SellMarket(symbol, clientOrderId string, amount decimal.Decimal
 	if err != nil {
 		return
 	}
-	price = price.Round(g.PricePrecision(symbol))
+	precision, err := g.PricePrecision(symbol)
+	if err != nil {
+		return
+	}
+	price = price.Round(precision)
 	return g.SellLimit(symbol, clientOrderId, price, amount)
 }
 
