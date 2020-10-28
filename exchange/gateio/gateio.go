@@ -181,7 +181,11 @@ func (g *GateIO) LastPrice(symbol string) (decimal.Decimal, error) {
 }
 
 func (g *GateIO) Last24hVolume(symbol string) (decimal.Decimal, error) {
-	panic("not implemented")
+	ticker, err := g.Ticker(symbol)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	return ticker.BaseVolume, nil
 }
 
 //// Depth
