@@ -1,6 +1,7 @@
 package gateio
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/json"
@@ -53,24 +54,34 @@ func (g *GateIO) GetPairs() (pairs []string, err error) {
 	return
 }
 
-func (g *GateIO) AllSymbols() (symbols []exchange.Symbol, err error) {
+func (g *GateIO) AllSymbols(ctx context.Context) (symbols []exchange.Symbol, err error) {
 	infos, err := g.MarketInfo()
 	if err != nil {
 		return
 	}
 	for _, stupidMap := range infos.Pairs {
-		for symbol, info := range stupidMap {
-			base, quote := cutSymbol(symbol)
-			symbols = append(symbols, exchange.Symbol{
-				Symbol:          symbol,
-				Disabled:        info.TradeDisabled != 0 || info.BuyDisabled != 0 || info.SellDisabled != 0,
-				BaseCurrency:    base,
-				QuoteCurrency:   quote,
-				PricePrecision:  info.PricePrecision,
-				AmountPrecision: info.AmountPrecision,
-				MinAmount:       decimal.NewFromFloat(info.MinAmount),
-				MinTotal:        decimal.NewFromFloat(info.MinAmountB),
-			})
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			for symbol, info := range stupidMap {
+				select {
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				default:
+					base, quote := cutSymbol(symbol)
+					symbols = append(symbols, exchange.Symbol{
+						Symbol:          symbol,
+						Disabled:        info.TradeDisabled != 0 || info.BuyDisabled != 0 || info.SellDisabled != 0,
+						BaseCurrency:    base,
+						QuoteCurrency:   quote,
+						PricePrecision:  info.PricePrecision,
+						AmountPrecision: info.AmountPrecision,
+						MinAmount:       decimal.NewFromFloat(info.MinAmount),
+						MinTotal:        decimal.NewFromFloat(info.MinAmountB),
+					})
+				}
+			}
 		}
 	}
 	return
@@ -85,26 +96,22 @@ func cutSymbol(symbol string) (base, quote string) {
 	return
 }
 
-func (g *GateIO) GetSymbol(symbol string) (s exchange.Symbol, err error) {
-	all, err := g.AllSymbols()
+func (g *GateIO) GetSymbol(ctx context.Context, symbol string) (s exchange.Symbol, err error) {
+	all, err := g.AllSymbols(ctx)
 	if err != nil {
 		return
 	}
 	for _, s_ := range all {
-		if s_.Symbol == symbol {
-			s = s_
-			break
+		select {
+		case <-ctx.Done():
+			return s, ctx.Err()
+		default:
+			if s_.Symbol == symbol {
+				s = s_
+				break
+			}
 		}
 	}
-	return
-}
-
-func (g *GateIO) PricePrecision(symbol string) (precision int32, err error) {
-	s, err := g.GetSymbol(symbol)
-	if err != nil {
-		return
-	}
-	precision = s.PricePrecision
 	return
 }
 
@@ -365,30 +372,22 @@ func (g *GateIO) SellLimit(symbol, text string, price, amount decimal.Decimal) (
 	return res.OrderNumber, nil
 }
 
-func (g *GateIO) BuyMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
-	price, err := g.LastPrice(symbol)
+func (g *GateIO) BuyMarket(symbol exchange.Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
+	price, err := g.LastPrice(symbol.Symbol)
 	if err != nil {
 		return
 	}
-	precision, err := g.PricePrecision(symbol)
-	if err != nil {
-		return
-	}
-	price = price.Round(precision)
-	return g.BuyLimit(symbol, clientOrderId, price, amount)
+	price = price.Round(symbol.PricePrecision)
+	return g.BuyLimit(symbol.Symbol, clientOrderId, price, amount)
 }
 
-func (g *GateIO) SellMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
-	price, err := g.LastPrice(symbol)
+func (g *GateIO) SellMarket(symbol exchange.Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
+	price, err := g.LastPrice(symbol.Symbol)
 	if err != nil {
 		return
 	}
-	precision, err := g.PricePrecision(symbol)
-	if err != nil {
-		return
-	}
-	price = price.Round(precision)
-	return g.SellLimit(symbol, clientOrderId, price, amount)
+	price = price.Round(symbol.PricePrecision)
+	return g.SellLimit(symbol.Symbol, clientOrderId, price, amount)
 }
 
 func (g *GateIO) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {

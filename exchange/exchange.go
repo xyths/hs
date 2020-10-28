@@ -1,6 +1,7 @@
 package exchange
 
 import (
+	"context"
 	"github.com/shopspring/decimal"
 	"github.com/xyths/hs"
 	"time"
@@ -9,8 +10,8 @@ import (
 // common exchange interface for all symbols
 type RestAPIExchange interface {
 	FormatSymbol(base, quote string) string
-	AllSymbols() (s []Symbol, err error)
-	GetSymbol(symbol string) (Symbol, error)
+	AllSymbols(ctx context.Context) (s []Symbol, err error)
+	GetSymbol(ctx context.Context, symbol string) (Symbol, error)
 	GetFee(symbol string) (fee Fee, err error)
 	SpotBalance() (map[string]decimal.Decimal, error)
 	SpotAvailableBalance() (map[string]decimal.Decimal, error)
@@ -22,8 +23,8 @@ type RestAPIExchange interface {
 	//PlaceOrder(orderType, symbol, clientOrderId string, price, amount decimal.Decimal) (uint64, error)
 	BuyLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)
 	SellLimit(symbol, clientOrderId string, price, amount decimal.Decimal) (orderId uint64, err error)
-	BuyMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error)
-	SellMarket(symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error)
+	BuyMarket(symbol Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error)
+	SellMarket(symbol Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error)
 	BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error)
 	SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error)
 

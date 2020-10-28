@@ -65,7 +65,7 @@ func (c *Client) GetTimestamp() (int, error) {
 	return hb.GetTimestamp()
 }
 
-func (c *Client) AllSymbols() (s []exchange.Symbol, err error) {
+func (c *Client) AllSymbols(ctx context.Context) (s []exchange.Symbol, err error) {
 	hb := new(client.CommonClient).Init(c.Host)
 	symbols, err := hb.GetSymbols()
 	if err != nil {
@@ -73,37 +73,47 @@ func (c *Client) AllSymbols() (s []exchange.Symbol, err error) {
 	}
 	s = make([]exchange.Symbol, len(symbols))
 	for i, a := range symbols {
-		s[i] = exchange.Symbol{
-			Symbol:          a.Symbol,
-			Disabled:        a.State != "online",
-			BaseCurrency:    a.BaseCurrency,
-			QuoteCurrency:   a.QuoteCurrency,
-			AmountPrecision: int32(a.AmountPrecision),
-			PricePrecision:  int32(a.PricePrecision),
-			MinAmount:       a.MinOrderAmt,
-			MinTotal:        a.MinOrderValue,
+		select {
+		case <-ctx.Done():
+			return s, ctx.Err()
+		default:
+			s[i] = exchange.Symbol{
+				Symbol:          a.Symbol,
+				Disabled:        a.State != "online",
+				BaseCurrency:    a.BaseCurrency,
+				QuoteCurrency:   a.QuoteCurrency,
+				AmountPrecision: int32(a.AmountPrecision),
+				PricePrecision:  int32(a.PricePrecision),
+				MinAmount:       a.MinOrderAmt,
+				MinTotal:        a.MinOrderValue,
+			}
 		}
 	}
 	return
 }
 
-func (c *Client) GetSymbol(symbol string) (s exchange.Symbol, err error) {
+func (c *Client) GetSymbol(ctx context.Context, symbol string) (s exchange.Symbol, err error) {
 	hb := new(client.CommonClient).Init(c.Host)
 	symbols, err := hb.GetSymbols()
 	if err != nil {
 		return
 	}
 	for _, a := range symbols {
-		if a.Symbol == symbol {
-			s.Symbol = a.Symbol
-			s.Disabled = a.State != "online"
-			s.BaseCurrency = a.BaseCurrency
-			s.QuoteCurrency = a.QuoteCurrency
-			s.AmountPrecision = int32(a.AmountPrecision)
-			s.PricePrecision = int32(a.PricePrecision)
-			s.MinAmount = a.MinOrderAmt
-			s.MinTotal = a.MinOrderValue
-			break
+		select {
+		case <-ctx.Done():
+			return s, ctx.Err()
+		default:
+			if a.Symbol == symbol {
+				s.Symbol = a.Symbol
+				s.Disabled = a.State != "online"
+				s.BaseCurrency = a.BaseCurrency
+				s.QuoteCurrency = a.QuoteCurrency
+				s.AmountPrecision = int32(a.AmountPrecision)
+				s.PricePrecision = int32(a.PricePrecision)
+				s.MinAmount = a.MinOrderAmt
+				s.MinTotal = a.MinOrderValue
+				return
+			}
 		}
 	}
 	return
@@ -459,12 +469,12 @@ func (c *Client) SellLimit(symbol, clientOrderId string, price, amount decimal.D
 	return c.SpotLimitOrder(OrderTypeSellLimit, symbol, clientOrderId, price, amount)
 }
 
-func (c *Client) BuyMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
-	return c.SpotMarketOrder(OrderTypeBuyMarket, symbol, clientOrderId, total)
+func (c *Client) BuyMarket(symbol exchange.Symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
+	return c.SpotMarketOrder(OrderTypeBuyMarket, symbol.Symbol, clientOrderId, total)
 }
 
-func (c *Client) SellMarket(symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
-	return c.SpotMarketOrder(OrderTypeSellMarket, symbol, clientOrderId, total)
+func (c *Client) SellMarket(symbol exchange.Symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
+	return c.SpotMarketOrder(OrderTypeSellMarket, symbol.Symbol, clientOrderId, total)
 }
 
 func (c *Client) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
