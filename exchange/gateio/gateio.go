@@ -63,6 +63,7 @@ func (g *GateIO) AllSymbols() (symbols []exchange.Symbol, err error) {
 			base, quote := cutSymbol(symbol)
 			symbols = append(symbols, exchange.Symbol{
 				Symbol:          symbol,
+				Disabled:        info.TradeDisabled != 0 || info.BuyDisabled != 0 || info.SellDisabled != 0,
 				BaseCurrency:    base,
 				QuoteCurrency:   quote,
 				PricePrecision:  info.PricePrecision,

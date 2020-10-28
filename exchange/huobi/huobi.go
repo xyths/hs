@@ -75,6 +75,7 @@ func (c *Client) AllSymbols() (s []exchange.Symbol, err error) {
 	for i, a := range symbols {
 		s[i] = exchange.Symbol{
 			Symbol:          a.Symbol,
+			Disabled:        a.State != "online",
 			BaseCurrency:    a.BaseCurrency,
 			QuoteCurrency:   a.QuoteCurrency,
 			AmountPrecision: int32(a.AmountPrecision),
@@ -95,6 +96,7 @@ func (c *Client) GetSymbol(symbol string) (s exchange.Symbol, err error) {
 	for _, a := range symbols {
 		if a.Symbol == symbol {
 			s.Symbol = a.Symbol
+			s.Disabled = a.State != "online"
 			s.BaseCurrency = a.BaseCurrency
 			s.QuoteCurrency = a.QuoteCurrency
 			s.AmountPrecision = int32(a.AmountPrecision)
