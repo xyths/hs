@@ -15,6 +15,7 @@ type RestAPIExchange interface {
 	SpotBalance() (map[string]decimal.Decimal, error)
 	SpotAvailableBalance() (map[string]decimal.Decimal, error)
 	LastPrice(symbol string) (decimal.Decimal, error)
+	Last24hVolume(symbol string) (decimal.Decimal, error)
 	CandleBySize(symbol string, period time.Duration, size int) (hs.Candle, error)
 	CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error)
 

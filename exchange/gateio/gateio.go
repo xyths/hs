@@ -172,6 +172,10 @@ func (g *GateIO) LastPrice(symbol string) (decimal.Decimal, error) {
 	return ticker.Last, nil
 }
 
+func (g *GateIO) Last24hVolume(symbol string) (decimal.Decimal, error) {
+	panic("not implemented")
+}
+
 //// Depth
 //func (g *GateIO) orderBooks() string {
 //	var method string = "GET"

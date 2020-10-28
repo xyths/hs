@@ -164,8 +164,7 @@ func (c *Client) LastPrice(symbol string) (decimal.Decimal, error) {
 	optionalRequest := market.GetCandlestickOptionalRequest{Period: market.MIN1, Size: 1}
 	candlesticks, err := hb.GetCandlestick(symbol, optionalRequest)
 	if err != nil {
-		log.Println(err)
-		return decimal.NewFromFloat(0), err
+		return decimal.Zero, err
 	}
 	for _, candlestick := range candlesticks {
 		//log.Printf("1min candlestick: OHLC[%s, %s, %s, %s]",
@@ -173,7 +172,16 @@ func (c *Client) LastPrice(symbol string) (decimal.Decimal, error) {
 		return candlestick.Close, nil
 	}
 
-	return decimal.NewFromFloat(0), nil
+	return decimal.Zero, nil
+}
+
+func (c *Client) Last24hVolume(symbol string) (decimal.Decimal, error) {
+	hb := new(client.MarketClient).Init(c.Host)
+	candlesticks, err := hb.GetLast24hCandlestick(symbol)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	return candlesticks.Vol, nil
 }
 
 func (c *Client) SpotBalance() (map[string]decimal.Decimal, error) {
