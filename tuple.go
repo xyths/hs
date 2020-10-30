@@ -1,10 +1,10 @@
 package hs
 
-type StringFloatTuple struct {
-	Key   string
+type FloatTuple struct {
+	Key   interface{}
 	Value float64
 }
-type KVSlice []StringFloatTuple
+type KVSlice []FloatTuple
 
 func (s KVSlice) Len() int {
 	return len(s)
