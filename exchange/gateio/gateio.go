@@ -376,12 +376,13 @@ func (g *GateIO) SellLimit(symbol, text string, price, amount decimal.Decimal) (
 	return res.OrderNumber, nil
 }
 
-func (g *GateIO) BuyMarket(symbol exchange.Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
+func (g *GateIO) BuyMarket(symbol exchange.Symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
 	price, err := g.LastPrice(symbol.Symbol)
 	if err != nil {
 		return
 	}
 	price = price.Round(symbol.PricePrecision)
+	amount := total.DivRound(price, symbol.AmountPrecision)
 	return g.BuyLimit(symbol.Symbol, clientOrderId, price, amount)
 }
 
