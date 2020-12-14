@@ -11,6 +11,7 @@ import (
 	"github.com/xyths/hs"
 	"github.com/xyths/hs/convert"
 	"github.com/xyths/hs/exchange"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,6 +21,9 @@ import (
 
 const (
 	DefaultHost = "gateio.life"
+
+	WsPathV3 = "/v3"
+	WsPathV4 = "/v4"
 )
 
 type GateIO struct {
@@ -28,13 +32,19 @@ type GateIO struct {
 
 	publicBaseUrl  string
 	privateBaseUrl string
+
+	host   string
+	wsPath string
+
+	Logger *zap.SugaredLogger
 }
 
-func New(key, secret, host string) *GateIO {
-	g := &GateIO{Key: key, Secret: secret}
+func New(key, secret, host string, logger *zap.SugaredLogger) *GateIO {
+	g := &GateIO{Key: key, Secret: secret, wsPath: WsPathV4, Logger: logger}
 	if host == "" {
 		host = DefaultHost
 	}
+	g.host = host
 	g.publicBaseUrl = "https://data." + host + "/api2/1"
 	g.privateBaseUrl = "https://api." + host + "/api2/1"
 	return g
@@ -216,7 +226,9 @@ func (g *GateIO) CandleBySize(symbol string, period time.Duration, size int) (ca
 }
 
 func (g *GateIO) CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
-	return hs.Candle{}, nil
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
+	defer cancel()
+	return g.ReqCandlestick(ctx, symbol, clientId, period, from, to)
 }
 
 // 获取Candle
@@ -597,4 +609,166 @@ func (g *GateIO) request(method string, url string, param string, result interfa
 		log.Printf("raw response: %s", string(data))
 	}
 	return err
+}
+
+// always call ReqPing use context context with a timeout
+func (g *GateIO) ReqPing(ctx context.Context, id int64) (string, error) {
+	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
+	ch := make(chan string, 1)
+	client.SetHandler(
+		func() {
+			g.Logger.Debug("successfully connected")
+			client.Ping(id)
+		},
+		func(resp interface{}) {
+			pong, ok := resp.(string)
+			if ok {
+				g.Logger.Debugf("handler got response: %s", pong)
+				ch <- pong
+			} else {
+				g.Logger.Error("wrong response")
+			}
+		},
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case pong := <-ch:
+			g.Logger.Debugf("response: %s", pong)
+			return pong, nil
+		case <-ctx.Done():
+			return "", ctx.Err()
+		}
+	}
+}
+
+func (g *GateIO) ReqTime(ctx context.Context, id int64) (int64, error) {
+	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
+	ch := make(chan int64, 1)
+	client.SetHandler(
+		func() {
+			g.Logger.Debug("successfully connected")
+			client.Time(id)
+		},
+		client.TimeHandler(func(resp interface{}) {
+			t, ok := resp.(int64)
+			if ok {
+				g.Logger.Debugf("handler got response: %d", t)
+				ch <- t
+			} else {
+				g.Logger.Error("wrong response")
+			}
+		}),
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case t := <-ch:
+			g.Logger.Debugf("response timestamp: %d", t)
+			return t, nil
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		}
+	}
+}
+
+func (g *GateIO) ReqTicker(ctx context.Context, id int64, symbol string, period time.Duration) (hs.Ticker, error) {
+	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
+	ch := make(chan hs.Ticker, 1)
+	client.SetHandler(
+		func() {
+			g.Logger.Debug("successfully connected")
+			client.ReqTicker(id, symbol, int64(period.Seconds()))
+		},
+		client.ReqTickerHandler(func(resp interface{}) {
+			t1, ok := resp.(ResponseWsTicker)
+			if !ok {
+				g.Logger.Error("wrong response")
+				return
+			}
+			g.Logger.Debugf("handler got raw response: %d", t1)
+			t2, _ := parseTicker(t1)
+			ch <- t2
+		}),
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case t := <-ch:
+			g.Logger.Debugf("response timestamp: %d", t)
+			return t, nil
+		case <-ctx.Done():
+			return hs.Ticker{}, ctx.Err()
+		}
+	}
+}
+
+func (g *GateIO) SubTicker(id int64, symbol string, responseHandler exchange.ResponseHandler) {
+	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
+	client.SetHandler(
+		func() {
+			client.SubTicker(id, symbol)
+		},
+		client.SubTickerHandler(responseHandler),
+	)
+	client.Connect(true)
+}
+
+func (g *GateIO) UnsubTicker(id int64, symbol string) {
+	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
+	client.UnsubTicker(id)
+}
+
+func (g *GateIO) ReqCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
+	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
+	ch := make(chan hs.Candle, 1)
+	id := time.Now().Unix()
+	client.SetHandler(
+		func() {
+			client.ReqCandle(id, symbol, from.Unix(), to.Unix(), int64(period.Seconds()))
+		},
+		client.ReqCandleHandler(func(resp interface{}) {
+			r, ok := resp.(hs.Candle)
+			if !ok {
+				return
+			}
+			ch <- r
+		}),
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case c := <-ch:
+			return c, nil
+		case <-ctx.Done():
+			return hs.Candle{}, ctx.Err()
+		}
+	}
+}
+
+func (g *GateIO) SubCandlestick(symbol, clientId string, period time.Duration,
+	responseHandler exchange.ResponseHandler) {
+	id := time.Now().Unix()
+	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
+	client.SetHandler(
+		func() {
+			client.SubCandle(id, symbol, int64(period.Seconds()))
+		},
+		client.SubCandleHandler(responseHandler),
+	)
+	client.Connect(true)
+}
+
+func (g *GateIO) UnsubCandlestick(symbol, clientId string) {
+	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
+	id := time.Now().Unix()
+	client.UnsubCandle(id)
 }

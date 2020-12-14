@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/aws/aws-sdk-go v1.34.18 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.4.2
 	github.com/huobirdcenter/huobi_golang v0.0.0-20200821050931-75de5c6fcc0e
 	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/klauspost/compress v1.10.11 // indirect

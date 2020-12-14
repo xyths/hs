@@ -24,3 +24,8 @@ const (
 	OrderTypeBuy  = "buy"
 	OrderTypeSell = "sell"
 )
+
+const (
+	WsIntervalSecond  = 5
+	WsReconnectSecond = 60
+)

@@ -1,5 +1,7 @@
 package gateio
 
+import "encoding/json"
+
 // from api result
 type RawTrade struct {
 	TradeId     uint64  `json:"tradeID"`
@@ -170,4 +172,35 @@ type RawSymbol struct {
 type ResponseMarketInfo struct {
 	Result string
 	Pairs  []map[string]RawSymbol
+}
+
+type AuthenticationRequest struct {
+	Apikey    string `json:"apikey"`
+	Signature string `json:"signature"`
+	Nonce     int64  `json:"nonce"`
+}
+
+func (ar AuthenticationRequest) ToJson() (string, error) {
+	result, err := json.Marshal(ar)
+	if err != nil {
+		return "", err
+	}
+	return string(result), nil
+}
+
+type WebsocketRequest struct {
+	Id     int64         `json:"id"`
+	Method string        `json:"method"`
+	Params []interface{} `json:"params"`
+}
+
+func (r WebsocketRequest) String() string {
+	if r.Params == nil {
+		r.Params = make([]interface{}, 0)
+	}
+	result, err := json.Marshal(r)
+	if err != nil {
+		return ""
+	}
+	return string(result)
 }

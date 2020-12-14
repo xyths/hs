@@ -1,24 +1,43 @@
 package gateio
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
+	"github.com/xyths/hs"
 	"github.com/xyths/hs/exchange"
 	"os"
 	"strconv"
 	"testing"
+	"time"
 )
 
-// apiKey=xxx secretKey=yyy go test -v -run TestGetPairs ./gateio
-func TestGateIO_GetPairs(t *testing.T) {
+var g *GateIO
+
+func TestMain(m *testing.M) {
+	l, err := hs.NewZapLogger(hs.LogConf{
+		Level:   "debug",
+		Outputs: []string{"stdout"},
+		Errors:  []string{"stderr"},
+	},
+	)
+	if err != nil {
+		return
+	}
+	defer l.Sync()
+
 	apiKey := os.Getenv("apiKey")
 	secretKey := os.Getenv("secretKey")
 	host := os.Getenv("host")
-	t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
-	gateio := New(apiKey, secretKey, host)
+	g = New(apiKey, secretKey, host, l.Sugar())
 
-	if pairs, err := gateio.GetPairs(); err != nil {
+	os.Exit(m.Run())
+}
+
+// apiKey=xxx secretKey=yyy go test -v -run TestGetPairs ./gateio
+func TestGateIO_GetPairs(t *testing.T) {
+	if pairs, err := g.GetPairs(); err != nil {
 		t.Logf("error when GetPairs: %s", err)
 	} else {
 		t.Logf("GetPairs: %s", pairs)
@@ -27,11 +46,11 @@ func TestGateIO_GetPairs(t *testing.T) {
 
 // apiKey=xxx secretKey=yyy go test -v -run TestGetPairs ./gateio
 func TestGateIO_MarketInfo(t *testing.T) {
-	apiKey := os.Getenv("apiKey")
-	secretKey := os.Getenv("secretKey")
-	host := os.Getenv("host")
-	t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
-	g := New(apiKey, secretKey, host)
+	//apiKey := os.Getenv("apiKey")
+	//secretKey := os.Getenv("secretKey")
+	//host := os.Getenv("host")
+	//t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
+	//g := New(apiKey, secretKey, host)
 
 	pairs, err := g.MarketInfo()
 
@@ -43,13 +62,13 @@ func TestGateIO_MarketInfo(t *testing.T) {
 
 // apiKey=xxx secretKey=yyy go test -v -run TestGetPairs ./gateio
 func TestGateIO_AllSymbols(t *testing.T) {
-	apiKey := os.Getenv("apiKey")
-	secretKey := os.Getenv("secretKey")
-	host := os.Getenv("host")
-	t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
-	g := New(apiKey, secretKey, host)
+	//apiKey := os.Getenv("apiKey")
+	//secretKey := os.Getenv("secretKey")
+	//host := os.Getenv("host")
+	//t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
+	//g := New(apiKey, secretKey, host)
 
-	symbols, err := g.AllSymbols()
+	symbols, err := g.AllSymbols(context.TODO())
 
 	require.NoError(t, err)
 	b, err := json.MarshalIndent(symbols, "", "\t")
@@ -59,22 +78,22 @@ func TestGateIO_AllSymbols(t *testing.T) {
 
 // apiKey=xxx secretKey=yyy go test -v -run TestGetPairs ./gateio
 func TestGateIO_GetSymbol(t *testing.T) {
-	apiKey := os.Getenv("apiKey")
-	secretKey := os.Getenv("secretKey")
-	host := os.Getenv("host")
-	t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
-	g := New(apiKey, secretKey, host)
+	//apiKey := os.Getenv("apiKey")
+	//secretKey := os.Getenv("secretKey")
+	//host := os.Getenv("host")
+	//t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
+	//g := New(apiKey, secretKey, host)
 
 	tests := []exchange.Symbol{
-		{"sero_usdt", "SERO", "USDT", 5, 3, decimal.NewFromFloat(0.0001), decimal.NewFromFloat(1)},
-		{"btc_usdt", "BTC", "USDT", 2, 4, decimal.NewFromFloat(0.0001), decimal.NewFromFloat(1)},
-		{"btc3l_usdt", "BTC3L", "USDT", 4, 3, decimal.NewFromFloat(0.0001), decimal.NewFromFloat(1)},
-		{"btc3s_usdt", "BTC3S", "USDT", 4, 3, decimal.NewFromFloat(0.0001), decimal.NewFromFloat(1)},
-		{"ampl_usdt", "AMPL", "USDT", 3, 4, decimal.NewFromFloat(0.0001), decimal.NewFromFloat(1)},
+		{Symbol: "sero_usdt", Disabled: false, BaseCurrency: "SERO", QuoteCurrency: "USDT", PricePrecision: 5, AmountPrecision: 3, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "btc_usdt", BaseCurrency: "BTC", QuoteCurrency: "USDT", PricePrecision: 2, AmountPrecision: 4, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "btc3l_usdt", BaseCurrency: "BTC3L", QuoteCurrency: "USDT", PricePrecision: 4, AmountPrecision: 3, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "btc3s_usdt", BaseCurrency: "BTC3S", QuoteCurrency: "USDT", PricePrecision: 4, AmountPrecision: 3, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "ampl_usdt", BaseCurrency: "AMPL", QuoteCurrency: "USDT", PricePrecision: 3, AmountPrecision: 4, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Symbol, func(t *testing.T) {
-			actual, err := g.GetSymbol(tt.Symbol)
+			actual, err := g.GetSymbol(context.TODO(), tt.Symbol)
 			require.NoError(t, err)
 			if tt.BaseCurrency != actual.BaseCurrency {
 				t.Errorf("base currency expect %s, actual %s", tt.BaseCurrency, actual.BaseCurrency)
@@ -100,15 +119,15 @@ func TestGateIO_GetSymbol(t *testing.T) {
 
 // apiKey=xxx secretKey=yyy symbol=aaa order=1111 go test -test.v -test.run TestGateIO_GetOrderString ./gateio
 func TestGateIO_GetOrderString(t *testing.T) {
-	apiKey := os.Getenv("apiKey")
-	secretKey := os.Getenv("secretKey")
-	host := os.Getenv("host")
+	//apiKey := os.Getenv("apiKey")
+	//secretKey := os.Getenv("secretKey")
+	//host := os.Getenv("host")
 	symbol := os.Getenv("symbol")
 	orderId_ := os.Getenv("order")
 	id, err := strconv.ParseUint(orderId_, 10, 64)
 	require.NoError(t, err)
-	t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
-	g := New(apiKey, secretKey, host)
+	//t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
+	//g := New(apiKey, secretKey, host)
 
 	order, err := g.GetOrderString(id, symbol)
 	require.NoError(t, err)
@@ -118,19 +137,91 @@ func TestGateIO_GetOrderString(t *testing.T) {
 
 // apiKey=xxx secretKey=yyy symbol=aaa order=1111 go test -test.v -test.run TestGateIO_GetOrder ./gateio
 func TestGateIO_GetOrder(t *testing.T) {
-	apiKey := os.Getenv("apiKey")
-	secretKey := os.Getenv("secretKey")
-	host := os.Getenv("host")
+	//apiKey := os.Getenv("apiKey")
+	//secretKey := os.Getenv("secretKey")
+	//host := os.Getenv("host")
 	symbol := os.Getenv("symbol")
 	orderId_ := os.Getenv("order")
 	id, err := strconv.ParseUint(orderId_, 10, 64)
 	require.NoError(t, err)
-	t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
-	g := New(apiKey, secretKey, host)
+	//t.Logf("apiKey: %s, secretKey: %s", apiKey, secretKey)
+	//g := New(apiKey, secretKey, host)
 
 	order, err := g.GetOrder(id, symbol)
 	require.NoError(t, err)
 	b, err := json.MarshalIndent(order, "", "\t")
 	require.NoError(t, err)
 	t.Logf("order is %s", string(b))
+}
+
+func TestGateIO_WsPing(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	localTime := time.Now().Unix()
+	pong, err := g.ReqPing(ctx, localTime)
+	require.NoError(t, err)
+	expect := "pong"
+	if pong != expect {
+		t.Logf("expect: %s, got: %s", expect, pong)
+	}
+}
+
+func TestGateIO_WsTime(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	localTime := time.Now().Unix()
+	serverTime, err := g.ReqTime(ctx, localTime)
+	require.NoError(t, err)
+	t.Logf("local: %d, server: %d", localTime, serverTime)
+}
+
+func TestGateIO_WsTicker(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
+	defer cancel()
+	id := time.Now().Unix()
+	symbol := "BTC_USDT"
+	ticker, err := g.ReqTicker(ctx, id, symbol, time.Hour)
+	require.NoError(t, err)
+	t.Logf("id: %d, symbol: %s, ticker: %v", id, symbol, ticker)
+}
+
+func TestGateIO_SubTicker(t *testing.T) {
+	id := time.Now().Unix()
+	symbol := "BTC_USDT"
+	g.SubTicker(id, symbol,
+		func(response interface{}) {
+			t.Logf("ticker response: %v", response)
+		})
+	time.Sleep(1 * time.Minute)
+	g.UnsubTicker(id, symbol)
+}
+
+func TestGateIO_ReqCandlestick(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
+	defer cancel()
+	symbol := "BTC_USDT"
+	end := time.Now()
+	start := end.Add(-4 * time.Hour)
+	candle, err := g.ReqCandlestick(ctx, symbol, "id", time.Hour, start, end)
+	require.NoError(t, err)
+	for i := 0; i < candle.Length(); i++ {
+		t.Logf("%d %f %f %f %f %f", candle.Timestamp[i], candle.Open[i], candle.High[i], candle.Low[i], candle.Close[i], candle.Volume[i])
+	}
+}
+
+func TestGateIO_SubCandlestick(t *testing.T) {
+	symbol := "BTC_USDT"
+	g.SubCandlestick(symbol, "id", time.Minute,
+		func(response interface{}) {
+			ticker, ok := response.(hs.Ticker)
+			if !ok {
+				t.Error("bad response format")
+				return
+			}
+			t.Logf("%d %f %f %f %f %f", ticker.Timestamp, ticker.Open, ticker.High, ticker.Low, ticker.Close, ticker.Volume)
+		})
+
+	time.Sleep(2 * time.Minute)
+	t.Log("unsubscribe")
+	g.UnsubCandlestick(symbol, "id")
 }

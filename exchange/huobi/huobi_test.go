@@ -25,7 +25,7 @@ func TestClient_GetTimestamp(t *testing.T) {
 func TestClient_AllSymbols(t *testing.T) {
 	c, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 	require.NoError(t, err)
-	symbols, err := c.AllSymbols()
+	symbols, err := c.AllSymbols(context.Background())
 	require.NoError(t, err)
 	for _, s := range symbols {
 		str, err := json.MarshalIndent(s, "", "\t")
@@ -39,8 +39,9 @@ func TestClient_GetSymbol(t *testing.T) {
 	c, err := New("test", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), os.Getenv("HUOBI_HOST"))
 	require.NoError(t, err)
 
+	ctx := context.Background()
 	for _, a := range tests {
-		s, err := c.GetSymbol(a)
+		s, err := c.GetSymbol(ctx, a)
 		require.NoError(t, err)
 		str, err := json.MarshalIndent(s, "", "\t")
 		require.NoError(t, err)

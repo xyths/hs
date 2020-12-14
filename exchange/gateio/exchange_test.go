@@ -8,6 +8,6 @@ import (
 // test the interface requirement
 func TestInterface(t *testing.T) {
 	var ex exchange.RestAPIExchange
-	ex = New("key", "secret", "host")
+	ex = New("key", "secret", "host", nil)
 	_ = ex
 }
