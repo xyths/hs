@@ -1,10 +1,13 @@
 package gateio
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/shopspring/decimal"
 	"github.com/xyths/hs"
 	"github.com/xyths/hs/convert"
+	"github.com/xyths/hs/exchange"
 	"strings"
 )
 
@@ -90,4 +93,70 @@ func parseTickers(data []interface{}) ([]hs.Ticker, error) {
 		tickers = append(tickers, t)
 	}
 	return tickers, err
+}
+
+// parseOrdersQuery parse the records in response of order.query
+func parseOrdersQuery(records []WsOrderRecord) (orders []exchange.Order, err error) {
+	for _, r := range records {
+		orders = append(orders, exchange.Order{
+			Id:            r.Id,
+			ClientOrderId: r.Text,
+			Type:          parseOrderType(r.Type),
+			Symbol:        r.Market,
+			Price:         decimal.RequireFromString(r.Price),
+			Amount:        decimal.RequireFromString(r.Amount),
+			Timestamp:     int64(r.CTime),
+			//Status:
+			FilledAmount: decimal.RequireFromString(r.FilledAmount),
+		})
+	}
+	return
+}
+
+func parseOrderType(gateType int) string {
+	switch gateType {
+	case 0:
+		return "unknown"
+	default:
+		return "unknown"
+	}
+}
+
+// parseOrderUpdate parse order.update message's params field
+func parseOrderUpdate(params []interface{}) (exchange.Order, error) {
+	o := exchange.Order{}
+
+	if len(params) != 2 {
+		return o, errors.New("order.update should have 2 params")
+	}
+	event, ok := params[0].(int)
+	if !ok {
+		return o, errors.New("bad event in order.update message")
+	}
+	r := WsOrderRecord{}
+	data, err := json.Marshal(params[1])
+	if err != nil {
+		return o, err
+	}
+	if err1 := json.Unmarshal(data, &r); err1 != nil {
+		return o, err
+	}
+	o.Id = r.Id
+	o.ClientOrderId = r.Text
+	o.Type = parseOrderType(r.Type)
+	o.Symbol = r.Market
+	o.Price = decimal.RequireFromString(r.Price)
+	o.Amount = decimal.RequireFromString(r.Amount)
+	o.Timestamp = int64(r.CTime)
+	o.FilledAmount = decimal.RequireFromString(r.FilledAmount)
+	// event type,Integer, 1: PUT, 2: UPDATE, 3: FINISH
+	switch event {
+	case 1:
+		o.Status = "open"
+	case 2:
+		o.Status = "filled"
+	case 3:
+		o.Status = "finish"
+	}
+	return o, nil
 }

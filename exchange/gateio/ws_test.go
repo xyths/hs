@@ -39,6 +39,8 @@ func TestWebsocketClient_Ping(t *testing.T) {
 	client.Close()
 }
 
+// go test -c ./exchange/gateio
+// host=ws.gateio.ws apiKey=xxx secretKey=yyy ./gateio.test -test.run=TestWebsocketClient_Auth
 func TestWebsocketClient_Auth(t *testing.T) {
 	l, err := hs.NewZapLogger(hs.LogConf{
 		Level:   "debug",

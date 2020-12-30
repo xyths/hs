@@ -772,3 +772,87 @@ func (g *GateIO) UnsubCandlestick(symbol, clientId string) {
 	id := time.Now().Unix()
 	client.UnsubCandle(id)
 }
+
+func (g *GateIO) ReqOrder(ctx context.Context, symbol, clientId string) (orders []exchange.Order, err error) {
+	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
+	id := time.Now().Unix()
+	ch := make(chan ResponseReqOrder, 10)
+	done := make(chan int, 1)
+	var offset uint64 = 0
+	var limit uint64 = 10
+	client.SetHandler(
+		func() {
+			client.ReqOrder(id, symbol, offset, limit)
+		},
+		client.ReqOrderHandler(func(resp interface{}) {
+			if resp == nil {
+				g.Logger.Debug("no open order")
+				done <- 1
+				return
+			}
+			r, ok := resp.(ResponseReqOrder)
+			if !ok {
+				g.Logger.Debug("response not ok")
+				done <- 1
+				return
+			}
+			ch <- r
+		}),
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case <-done:
+			return
+		case batch := <-ch:
+			g.Logger.Debugf("received batch data, offset %d, limit %d, total %d, len %d", batch.Offset, batch.Limit, batch.Total, len(batch.Records))
+			if batch.Limit <= batch.Total {
+				offset += limit
+				client.ReqOrder(id, symbol, offset, limit)
+			}
+			if o, err := parseOrdersQuery(batch.Records); err == nil {
+				g.Logger.Debugf("parsed %d orders", len(o))
+				orders = append(orders, o...)
+			} else {
+				g.Logger.Errorf("got bad order: %s", err)
+			}
+			if batch.Offset+int64(len(batch.Records)) >= batch.Total {
+				return
+			}
+		case <-ctx.Done():
+			return orders, ctx.Err()
+		}
+	}
+}
+
+func (g *GateIO) SubOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
+	id := time.Now().Unix()
+	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
+	client.SetHandler(
+		func() {
+			client.SubOrder(id, []string{symbol})
+		},
+		client.SubOrderHandler(responseHandler),
+	)
+	client.Connect(true)
+}
+
+func (g *GateIO) UnsubOrder(symbol, clientId string) {
+	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
+	id := time.Now().Unix()
+	client.UnsubOrder(id, []string{symbol})
+}
+
+func (g *GateIO) ReqBalance(ctx context.Context, currencies []string) {
+
+}
+
+func (g *GateIO) SubBalance(currencies []string) {
+
+}
+
+func (g *GateIO) UnsubBalance(currencies []string) {
+
+}

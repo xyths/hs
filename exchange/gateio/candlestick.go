@@ -12,13 +12,13 @@ package gateio
 //
 //// Responsible to handle candlestick data from WebSocket
 //type CandlestickWebSocketClient struct {
-//	base.PublicWebsocketBase
+//	base.WebsocketBase
 //	responseHandler base.ResponseHandler
 //}
 //
 //// Initializer
 //func (p *CandlestickWebSocketClient) Init(host, path string, logger *zap.SugaredLogger) *CandlestickWebSocketClient {
-//	p.PublicWebsocketBase.Init(host, path, logger, WsIntervalSecond, WsReconnectSecond, true)
+//	p.WebsocketBase.Init(host, path, logger, WsIntervalSecond, WsReconnectSecond, true)
 //	return p
 //}
 //
@@ -28,7 +28,7 @@ package gateio
 //	responseHandler websocketclientbase.ResponseHandler) {
 //	c.responseHandler = responseHandler
 //
-//	p.PublicWebsocketBase.SetHandler(connectedHandler, p.handleMessage)
+//	p.WebsocketBase.SetHandler(connectedHandler, p.handleMessage)
 //}
 //
 //// Request the full candlestick data according to specified criteria

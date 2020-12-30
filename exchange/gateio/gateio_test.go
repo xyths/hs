@@ -225,3 +225,17 @@ func TestGateIO_SubCandlestick(t *testing.T) {
 	t.Log("unsubscribe")
 	g.UnsubCandlestick(symbol, "id")
 }
+
+func TestPrivateWebsocketClient_ReqOrder(t *testing.T) {
+	symbol := os.Getenv("symbol")
+	if symbol == "" {
+		symbol = "BTC_USDT"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
+	defer cancel()
+	orders, err := g.ReqOrder(ctx, symbol, "id")
+	require.NoError(t, err)
+	for o := range orders {
+		t.Logf("%v", o)
+	}
+}

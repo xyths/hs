@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type PublicWebsocketBase struct {
+type WebsocketBase struct {
 	host                string
 	path                string
 	TimerIntervalSecond int
@@ -27,7 +27,7 @@ type PublicWebsocketBase struct {
 }
 
 // Initializer
-func (b *PublicWebsocketBase) Init(host, path string, logger *zap.SugaredLogger, intervalSecond, reconnectSecond int, verbose bool) *PublicWebsocketBase {
+func (b *WebsocketBase) Init(host, path string, logger *zap.SugaredLogger, intervalSecond, reconnectSecond int, verbose bool) *WebsocketBase {
 	b.host = host
 	b.path = path
 	b.Logger = logger
@@ -42,14 +42,14 @@ func (b *PublicWebsocketBase) Init(host, path string, logger *zap.SugaredLogger,
 }
 
 // Set callback handler
-func (b *PublicWebsocketBase) SetHandler(connHandler ConnectedHandler, msgHandler MessageHandler) {
+func (b *WebsocketBase) SetHandler(connHandler ConnectedHandler, msgHandler MessageHandler) {
 	b.connectedHandler = connHandler
 	b.messageHandler = msgHandler
 }
 
 // Connect to websocket server
 // if autoConnect is true, then the connection can be re-connect if no data received after the pre-defined timeout
-func (b *PublicWebsocketBase) Connect(autoConnect bool) {
+func (b *WebsocketBase) Connect(autoConnect bool) {
 	b.connectWebSocket()
 
 	if autoConnect {
@@ -58,7 +58,7 @@ func (b *PublicWebsocketBase) Connect(autoConnect bool) {
 }
 
 // Send data to websocket server
-func (b *PublicWebsocketBase) Send(data string) {
+func (b *WebsocketBase) Send(data string) {
 	if b.conn == nil {
 		if b.verbose {
 			b.Logger.Error("WebSocket sent error: no connection available")
@@ -78,13 +78,13 @@ func (b *PublicWebsocketBase) Send(data string) {
 }
 
 // Close the connection to server
-func (b *PublicWebsocketBase) Close() {
+func (b *WebsocketBase) Close() {
 	b.stopTicker()
 	b.disconnectWebSocket()
 }
 
 // connect to server
-func (b *PublicWebsocketBase) connectWebSocket() {
+func (b *WebsocketBase) connectWebSocket() {
 	var err error
 	url := fmt.Sprintf("wss://%s%s", b.host, b.path)
 	if b.verbose {
@@ -109,7 +109,7 @@ func (b *PublicWebsocketBase) connectWebSocket() {
 }
 
 // disconnect with server
-func (b *PublicWebsocketBase) disconnectWebSocket() {
+func (b *WebsocketBase) disconnectWebSocket() {
 	if b.conn == nil {
 		return
 	}
@@ -133,7 +133,7 @@ func (b *PublicWebsocketBase) disconnectWebSocket() {
 }
 
 // initialize a ticker and start a goroutine tickerLoop()
-func (b *PublicWebsocketBase) startTicker() {
+func (b *WebsocketBase) startTicker() {
 	b.ticker = time.NewTicker(time.Duration(b.TimerIntervalSecond) * time.Second)
 	b.lastReceivedTime = time.Now()
 
@@ -141,7 +141,7 @@ func (b *PublicWebsocketBase) startTicker() {
 }
 
 // stop ticker and stop the goroutine
-func (b *PublicWebsocketBase) stopTicker() {
+func (b *WebsocketBase) stopTicker() {
 	b.ticker.Stop()
 	b.stopTickerChannel <- 1
 }
@@ -149,7 +149,7 @@ func (b *PublicWebsocketBase) stopTicker() {
 // defines a for loop that will run based on ticker's frequency
 // It checks the last data that received from server, if it is longer than the threshold,
 // it will force disconnect server and connect again.
-func (b *PublicWebsocketBase) tickerLoop() {
+func (b *WebsocketBase) tickerLoop() {
 	if b.verbose {
 		b.Logger.Debug("tickerLoop started")
 	}
@@ -181,18 +181,18 @@ func (b *PublicWebsocketBase) tickerLoop() {
 }
 
 // start a goroutine readLoop()
-func (b *PublicWebsocketBase) startReadLoop() {
+func (b *WebsocketBase) startReadLoop() {
 	go b.readLoop()
 }
 
 // stop the goroutine readLoop()
-func (b *PublicWebsocketBase) stopReadLoop() {
+func (b *WebsocketBase) stopReadLoop() {
 	b.stopReadChannel <- 1
 }
 
 // defines a for loop to read data from server
 // it will stop once it receives the signal from stopReadChannel
-func (b *PublicWebsocketBase) readLoop() {
+func (b *WebsocketBase) readLoop() {
 	if b.verbose {
 		b.Logger.Debug("readLoop started")
 	}
@@ -204,6 +204,23 @@ func (b *PublicWebsocketBase) readLoop() {
 				b.Logger.Debug("readLoop stopped")
 			}
 			return
+		//case <-time.After(time.Duration(b.TimerIntervalSecond) * time.Second):
+		//	if b.conn == nil {
+		//		if b.verbose {
+		//			b.Logger.Error("Read error: no connection available")
+		//		}
+		//		continue
+		//	}
+		//	msgType, buf, err := b.conn.ReadMessage()
+		//	if err != nil {
+		//		if b.verbose {
+		//			b.Logger.Errorf("Read error: %s", err)
+		//		}
+		//		continue
+		//	}
+		//
+		//	b.lastReceivedTime = time.Now()
+		//	b.messageHandler(msgType, buf)
 
 		default:
 			if b.conn == nil {

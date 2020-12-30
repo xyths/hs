@@ -15,14 +15,13 @@ import (
 )
 
 const (
+	// 使用特殊的消息ID区分鉴权消息和普通订阅消息
 	authId = 100
 )
 
 type GateAuthentication struct {
 	api    string
 	secret string
-	host   string
-	path   string
 
 	hash hash.Hash
 }
@@ -50,14 +49,14 @@ func (a *GateAuthentication) Build() (string, error) {
 }
 
 type WebsocketClient struct {
-	base.PublicWebsocketBase
-	//base.PrivateWebSocketBase
+	base.WebsocketBase
+	//base.WebsocketBase
 	responseHandler base.ResponseHandler
 }
 
 // Initializer
 func (c *WebsocketClient) Init(host, path string, logger *zap.SugaredLogger) *WebsocketClient {
-	c.PublicWebsocketBase.Init(host, path, logger, 5, 60, true)
+	c.WebsocketBase.Init(host, path, logger, 5, 60, true)
 	return c
 }
 
@@ -66,7 +65,7 @@ func (c *WebsocketClient) SetHandler(
 	connectedHandler base.ConnectedHandler,
 	responseHandler base.ResponseHandler) {
 	c.responseHandler = responseHandler
-	c.PublicWebsocketBase.SetHandler(connectedHandler, c.handleMessage)
+	c.WebsocketBase.SetHandler(connectedHandler, c.handleMessage)
 }
 
 func (c *WebsocketClient) handleMessage(messageType int, payload []byte) {
@@ -137,7 +136,7 @@ func (c *WebsocketClient) Ping(id int64) {
 		Method: "server.ping",
 		Params: make([]interface{}, 0),
 	}
-	c.PublicWebsocketBase.Send(req.String())
+	c.WebsocketBase.Send(req.String())
 }
 
 func (c *WebsocketClient) PingHandler(handler base.ResponseHandler) base.ResponseHandler {
@@ -153,7 +152,7 @@ func (c *WebsocketClient) Time(id int64) {
 		Method: "server.time",
 		Params: make([]interface{}, 0),
 	}
-	c.PublicWebsocketBase.Send(req.String())
+	c.WebsocketBase.Send(req.String())
 }
 
 func (c *WebsocketClient) TimeHandler(handler base.ResponseHandler) base.ResponseHandler {
@@ -176,7 +175,7 @@ func (c *WebsocketClient) ReqTicker(id int64, symbol string, period int64) {
 	}
 	req.Params = append(req.Params, symbol)
 	req.Params = append(req.Params, period)
-	c.PublicWebsocketBase.Send(req.String())
+	c.WebsocketBase.Send(req.String())
 }
 
 func (c *WebsocketClient) ReqTickerHandler(handler base.ResponseHandler) base.ResponseHandler {
@@ -202,7 +201,7 @@ func (c *WebsocketClient) SubTicker(id int64, symbol string) {
 		Params: make([]interface{}, 1),
 	}
 	req.Params[0] = symbol
-	c.PublicWebsocketBase.Send(req.String())
+	c.WebsocketBase.Send(req.String())
 }
 
 func (c *WebsocketClient) UnsubTicker(id int64) {
@@ -211,7 +210,7 @@ func (c *WebsocketClient) UnsubTicker(id int64) {
 		Method: "ticker.unsubscribe",
 		Params: make([]interface{}, 0),
 	}
-	c.PublicWebsocketBase.Send(req.String())
+	c.WebsocketBase.Send(req.String())
 }
 
 func (c *WebsocketClient) SubTickerHandler(handler exchange.ResponseHandler) base.ResponseHandler {
@@ -251,7 +250,7 @@ func (c *WebsocketClient) ReqCandle(id int64, symbol string, start, end, interva
 			symbol, start, end, interval,
 		},
 	}
-	c.PublicWebsocketBase.Send(req.String())
+	c.WebsocketBase.Send(req.String())
 }
 
 func (c *WebsocketClient) SubCandle(id int64, symbol string, interval int64) {
@@ -262,7 +261,7 @@ func (c *WebsocketClient) SubCandle(id int64, symbol string, interval int64) {
 			symbol, interval,
 		},
 	}
-	c.PublicWebsocketBase.Send(req.String())
+	c.WebsocketBase.Send(req.String())
 }
 
 func (c *WebsocketClient) UnsubCandle(id int64) {
@@ -271,7 +270,7 @@ func (c *WebsocketClient) UnsubCandle(id int64) {
 		Method: "kline.unsubscribe",
 		Params: make([]interface{}, 0),
 	}
-	c.PublicWebsocketBase.Send(req.String())
+	c.WebsocketBase.Send(req.String())
 }
 
 func (c *WebsocketClient) SubCandleHandler(handler exchange.ResponseHandler) base.ResponseHandler {
@@ -308,7 +307,7 @@ func (c *WebsocketClient) Auth(api, secret string) {
 	auth := GateAuthentication{}
 	auth.Init(api, secret)
 	a, _ := auth.Build()
-	c.PublicWebsocketBase.Send(a)
+	c.WebsocketBase.Send(a)
 }
 
 func (c *WebsocketClient) AuthHandler(handler base.ResponseHandler) base.ResponseHandler {
@@ -318,16 +317,17 @@ func (c *WebsocketClient) AuthHandler(handler base.ResponseHandler) base.Respons
 }
 
 type PrivateWebsocketClient struct {
-	base.PrivateWebSocketBase
-	responseHandler base.ResponseHandler
+	base.WebsocketBase
+	auth             *GateAuthentication
+	connectedHandler base.ConnectedHandler
+	responseHandler  base.ResponseHandler
 }
 
 // Initializer
 func (c *PrivateWebsocketClient) Init(host, path string, apiKey, secretKey string, logger *zap.SugaredLogger) *PrivateWebsocketClient {
-	auth := &GateAuthentication{
-		api: apiKey, secret: secretKey, host: host, path: path,
-	}
-	c.PrivateWebSocketBase.Init(host, path, auth, logger, 5, 60, true)
+	c.auth = &GateAuthentication{}
+	c.auth.Init(apiKey, secretKey)
+	c.WebsocketBase.Init(host, path, logger, 5, 60, true)
 	return c
 }
 
@@ -335,8 +335,9 @@ func (c *PrivateWebsocketClient) Init(host, path string, apiKey, secretKey strin
 func (c *PrivateWebsocketClient) SetHandler(
 	connectedHandler base.ConnectedHandler,
 	responseHandler base.ResponseHandler) {
+	c.connectedHandler = connectedHandler
 	c.responseHandler = responseHandler
-	c.PrivateWebSocketBase.SetHandler(connectedHandler, c.handleMessage)
+	c.WebsocketBase.SetHandler(c.authHandler, c.handleMessage)
 }
 
 func (c *PrivateWebsocketClient) handleMessage(messageType int, payload []byte) {
@@ -367,6 +368,13 @@ func (c *PrivateWebsocketClient) handleReqMessage(payload []byte) {
 		c.Logger.Infof("response error: %s", r.Error)
 		return
 	}
+	if r.Id == authId {
+		c.Logger.Info("auth success")
+		if c.connectedHandler != nil {
+			c.connectedHandler()
+		}
+		return
+	}
 	// handle subscribe success, early return
 	if success, ok := r.Result.(map[string]interface{}); ok {
 		if success["status"] == "success" {
@@ -391,5 +399,165 @@ func (c *PrivateWebsocketClient) handleSubMessage(payload []byte) {
 	}
 	if c.responseHandler != nil {
 		c.responseHandler(b.Params)
+	}
+}
+
+func (c *PrivateWebsocketClient) authHandler() {
+	a, _ := c.auth.Build()
+	c.WebsocketBase.Send(a)
+}
+
+func (c *PrivateWebsocketClient) ReqOrder(id int64, symbol string, offset, limit uint64) {
+	req := WebsocketRequest{
+		Id:     id,
+		Method: "order.query",
+		Params: []interface{}{
+			symbol, offset, limit,
+		},
+	}
+	c.WebsocketBase.Send(req.String())
+}
+
+func (c *PrivateWebsocketClient) SubOrder(id int64, symbols []string) {
+	req := WebsocketRequest{
+		Id:     id,
+		Method: "order.subscribe",
+		Params: make([]interface{}, 0),
+	}
+	for _, s := range symbols {
+		req.Params = append(req.Params, s)
+	}
+
+	c.WebsocketBase.Send(req.String())
+}
+
+func (c *PrivateWebsocketClient) UnsubOrder(id int64, symbols []string) {
+	req := WebsocketRequest{
+		Id:     id,
+		Method: "order.unsubscribe",
+		Params: make([]interface{}, 0),
+	}
+	for _, s := range symbols {
+		req.Params = append(req.Params, s)
+	}
+	c.WebsocketBase.Send(req.String())
+}
+
+// ReqOrderHandler cast the raw result to gate order object list
+func (c *PrivateWebsocketClient) ReqOrderHandler(handler base.ResponseHandler) base.ResponseHandler {
+	return func(response interface{}) {
+		if response == nil {
+			handler(nil)
+			return
+		}
+		var r ResponseReqOrder
+		data, err := json.Marshal(response)
+		if err != nil {
+			c.Logger.Errorf("parse response error: %s", err)
+			handler(nil)
+			return
+		}
+		if err1 := json.Unmarshal(data, &r); err1 != nil {
+			c.Logger.Errorf("parse response error: %s", err1)
+			handler(nil)
+			return
+		}
+		handler(r)
+		return
+	}
+}
+
+func (c *PrivateWebsocketClient) SubOrderHandler(handler exchange.ResponseHandler) base.ResponseHandler {
+	return func(response interface{}) {
+		c.Logger.Debugf("order update: %v", response)
+		r, ok := response.([]interface{})
+		if !ok {
+			return
+		}
+		order, err := parseOrderUpdate(r)
+		if err != nil {
+			c.Logger.Errorf("parse ticker error: %s", err)
+			return
+		}
+		c.Logger.Debugf("receive order %v update", order)
+		handler(order)
+	}
+}
+
+func (c *PrivateWebsocketClient) ReqBalance(id int64, assets []string) {
+	req := WebsocketRequest{
+		Id:     id,
+		Method: "balance.query",
+		Params: make([]interface{}, 0),
+	}
+	for _, s := range assets {
+		req.Params = append(req.Params, s)
+	}
+	c.WebsocketBase.Send(req.String())
+}
+
+func (c *PrivateWebsocketClient) SubBalance(id int64, assets []string) {
+	req := WebsocketRequest{
+		Id:     id,
+		Method: "balance.subscribe",
+		Params: make([]interface{}, 0),
+	}
+	for _, s := range assets {
+		req.Params = append(req.Params, s)
+	}
+
+	c.WebsocketBase.Send(req.String())
+}
+
+func (c *PrivateWebsocketClient) UnsubBalance(id int64, assets []string) {
+	req := WebsocketRequest{
+		Id:     id,
+		Method: "balance.unsubscribe",
+		Params: make([]interface{}, 0),
+	}
+	for _, s := range assets {
+		req.Params = append(req.Params, s)
+	}
+	c.WebsocketBase.Send(req.String())
+}
+
+// ReqBalanceHandler cast the raw result to gate order object list
+func (c *PrivateWebsocketClient) ReqBalanceHandler(handler base.ResponseHandler) base.ResponseHandler {
+	return func(response interface{}) {
+		if response == nil {
+			handler(nil)
+			return
+		}
+		var r ResponseReqOrder
+		data, err := json.Marshal(response)
+		if err != nil {
+			c.Logger.Errorf("parse response error: %s", err)
+			handler(nil)
+			return
+		}
+		if err1 := json.Unmarshal(data, &r); err1 != nil {
+			c.Logger.Errorf("parse response error: %s", err1)
+			handler(nil)
+			return
+		}
+		handler(r)
+		return
+	}
+}
+
+func (c *PrivateWebsocketClient) SubBalanceHandler(handler exchange.ResponseHandler) base.ResponseHandler {
+	return func(response interface{}) {
+		c.Logger.Debugf("order update: %v", response)
+		r, ok := response.([]interface{})
+		if !ok {
+			return
+		}
+		order, err := parseOrderUpdate(r)
+		if err != nil {
+			c.Logger.Errorf("parse ticker error: %s", err)
+			return
+		}
+		c.Logger.Debugf("receive order %v update", order)
+		handler(order)
 	}
 }
