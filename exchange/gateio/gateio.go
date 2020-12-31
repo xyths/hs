@@ -39,6 +39,30 @@ type GateIO struct {
 	Logger *zap.SugaredLogger
 }
 
+func (g *GateIO) SubscribeOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
+	g.SubOrder(symbol, clientId, responseHandler)
+}
+
+func (g *GateIO) UnsubscribeOrder(symbol, clientId string) {
+	g.UnsubOrder(symbol, clientId)
+}
+
+func (g *GateIO) SubscribeCandlestick(symbol, clientId string, period time.Duration, responseHandler exchange.ResponseHandler) {
+	g.SubCandlestick(symbol, clientId, period, responseHandler)
+}
+
+func (g *GateIO) UnsubscribeCandlestick(symbol, clientId string, period time.Duration) {
+	g.UnsubCandlestick(symbol, clientId)
+}
+
+func (g *GateIO) SubscribeCandlestickWithReq(symbol, clientId string, period time.Duration, responseHandler exchange.ResponseHandler) {
+	panic("implement me")
+}
+
+func (g *GateIO) UnsubscribeCandlestickWithReq(symbol, clientId string, period time.Duration) {
+	panic("implement me")
+}
+
 func New(key, secret, host string, logger *zap.SugaredLogger) *GateIO {
 	g := &GateIO{Key: key, Secret: secret, wsPath: WsPathV4, Logger: logger}
 	if host == "" {
