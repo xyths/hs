@@ -160,3 +160,48 @@ func parseOrderUpdate(params []interface{}) (exchange.Order, error) {
 	}
 	return o, nil
 }
+
+func cutSymbol(symbol string) (base, quote string) {
+	tokens := strings.Split(symbol, "_")
+	if len(tokens) == 2 {
+		base = strings.ToUpper(tokens[0])
+		quote = strings.ToUpper(tokens[1])
+	}
+	return
+}
+
+func takeAsks(asks []Quote, total decimal.Decimal, pricePrecision, amountPrecision int32) (price, amount decimal.Decimal) {
+	left := total
+	for i := len(asks) - 1; i >= 0; i-- {
+		price = decimal.NewFromFloat(asks[i][0]).Round(pricePrecision)
+		a := decimal.NewFromFloat(asks[i][1]).Round(amountPrecision)
+		taken := left.DivRound(price, amountPrecision)
+		if taken.GreaterThan(a) {
+			taken = a
+			amount = amount.Add(taken)
+			left = left.Sub(amount.Mul(price))
+		} else {
+			amount = amount.Add(taken)
+			break
+		}
+	}
+	// fix amount, this will reduce the amount
+	amount = total.DivRound(price, amountPrecision)
+	return
+}
+
+func takeBids(bids []Quote, amount decimal.Decimal, pricePrecision, amountPrecision int32) (price decimal.Decimal) {
+	left := amount
+	for i := 0; i < len(bids); i++ {
+		price = decimal.NewFromFloat(bids[i][0]).Round(pricePrecision)
+		a := decimal.NewFromFloat(bids[i][1]).Round(amountPrecision)
+		taken := left.DivRound(price, amountPrecision)
+		if taken.GreaterThan(a) {
+			taken = a
+			left = left.Sub(taken)
+		} else {
+			break
+		}
+	}
+	return
+}

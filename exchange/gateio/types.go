@@ -149,12 +149,13 @@ type ResponseCandles struct {
 	Data    []RawCandle
 }
 
+// price, amount
 type Quote [2]float64
 
 type ResponseOrderBook struct {
 	Result string
-	Asks   []Quote
-	Bids   []Quote
+	Asks   []Quote // sell
+	Bids   []Quote // buy
 }
 
 type RawSymbol struct {

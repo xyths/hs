@@ -5,8 +5,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/xyths/hs"
 	"github.com/xyths/hs/convert"
@@ -19,15 +19,10 @@ import (
 	"time"
 )
 
-const (
-	DefaultHost = "gateio.life"
-
-	WsPathV3 = "/v3"
-	WsPathV4 = "/v4"
-)
-
-// gateio APIv4 版本的RESTful接口封装
-type GateIO struct {
+// V2版本的Gate接口，仅支持现货，仅支持RESTful
+// 支持websocket比较有限，仅复制了一些函数，未经反复测试
+// 此V2会逐步废弃
+type V2 struct {
 	Key    string
 	Secret string
 
@@ -40,32 +35,9 @@ type GateIO struct {
 	Logger *zap.SugaredLogger
 }
 
-func (g *GateIO) SubscribeOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
-	g.SubOrder(symbol, clientId, responseHandler)
-}
 
-func (g *GateIO) UnsubscribeOrder(symbol, clientId string) {
-	g.UnsubOrder(symbol, clientId)
-}
-
-func (g *GateIO) SubscribeCandlestick(symbol, clientId string, period time.Duration, responseHandler exchange.ResponseHandler) {
-	g.SubCandlestick(symbol, clientId, period, responseHandler)
-}
-
-func (g *GateIO) UnsubscribeCandlestick(symbol, clientId string, period time.Duration) {
-	g.UnsubCandlestick(symbol, clientId)
-}
-
-func (g *GateIO) SubscribeCandlestickWithReq(symbol, clientId string, period time.Duration, responseHandler exchange.ResponseHandler) {
-	panic("implement me")
-}
-
-func (g *GateIO) UnsubscribeCandlestickWithReq(symbol, clientId string, period time.Duration) {
-	panic("implement me")
-}
-
-func New(key, secret, host string, logger *zap.SugaredLogger) *GateIO {
-	g := &GateIO{Key: key, Secret: secret, wsPath: WsPathV4, Logger: logger}
+func NewV2(key, secret, host string, logger *zap.SugaredLogger) *V2 {
+	g := &V2{Key: key, Secret: secret, wsPath: WsPathV4, Logger: logger}
 	if host == "" {
 		host = DefaultHost
 	}
@@ -75,13 +47,8 @@ func New(key, secret, host string, logger *zap.SugaredLogger) *GateIO {
 	return g
 }
 
-const (
-	GET  = "GET"
-	POST = "POST"
-)
-
 // all support pairs
-func (g *GateIO) GetPairs() (pairs []string, err error) {
+func (g *V2) GetPairs() (pairs []string, err error) {
 	var method string = "GET"
 	url := "/pairs"
 	param := ""
@@ -89,7 +56,7 @@ func (g *GateIO) GetPairs() (pairs []string, err error) {
 	return
 }
 
-func (g *GateIO) AllSymbols(ctx context.Context) (symbols []exchange.Symbol, err error) {
+func (g *V2) AllSymbols(ctx context.Context) (symbols []exchange.Symbol, err error) {
 	infos, err := g.MarketInfo()
 	if err != nil {
 		return
@@ -122,7 +89,7 @@ func (g *GateIO) AllSymbols(ctx context.Context) (symbols []exchange.Symbol, err
 	return
 }
 
-func (g *GateIO) GetSymbol(ctx context.Context, symbol string) (s exchange.Symbol, err error) {
+func (g *V2) GetSymbol(ctx context.Context, symbol string) (s exchange.Symbol, err error) {
 	all, err := g.AllSymbols(ctx)
 	if err != nil {
 		return
@@ -141,7 +108,7 @@ func (g *GateIO) GetSymbol(ctx context.Context, symbol string) (s exchange.Symbo
 	return
 }
 
-func (g *GateIO) GetFee(symbol string) (fee exchange.Fee, err error) {
+func (g *V2) GetFee(symbol string) (fee exchange.Fee, err error) {
 	fee.Symbol = symbol
 	fee.BaseMaker = decimal.NewFromFloat(DefaultMaker)
 	fee.BaseTaker = decimal.NewFromFloat(DefaultTaker)
@@ -151,7 +118,7 @@ func (g *GateIO) GetFee(symbol string) (fee exchange.Fee, err error) {
 }
 
 // Market Info
-func (g *GateIO) MarketInfo() (res ResponseMarketInfo, err error) {
+func (g *V2) MarketInfo() (res ResponseMarketInfo, err error) {
 	var method string = "GET"
 	url := "/marketinfo"
 	param := ""
@@ -160,7 +127,7 @@ func (g *GateIO) MarketInfo() (res ResponseMarketInfo, err error) {
 }
 
 //// Market Details
-//func (g *GateIO) marketlist() string {
+//func (g *V2) marketlist() string {
 //	var method string = "GET"
 //	url := "/marketlist"
 //	param := ""
@@ -169,7 +136,7 @@ func (g *GateIO) MarketInfo() (res ResponseMarketInfo, err error) {
 //}
 //
 //// tickers
-//func (g *GateIO) tickers() string {
+//func (g *V2) tickers() string {
 //	var method string = "GET"
 //	url := "/tickers"
 //	param := ""
@@ -178,7 +145,7 @@ func (g *GateIO) MarketInfo() (res ResponseMarketInfo, err error) {
 //}
 //
 // ticker
-func (g *GateIO) Ticker(currencyPair string) (*exchange.Ticker, error) {
+func (g *V2) Ticker(currencyPair string) (*exchange.Ticker, error) {
 	url := "/ticker" + "/" + currencyPair
 	param := ""
 	var t ResponseTicker
@@ -198,7 +165,7 @@ func (g *GateIO) Ticker(currencyPair string) (*exchange.Ticker, error) {
 	return ticker, nil
 }
 
-func (g *GateIO) LastPrice(symbol string) (decimal.Decimal, error) {
+func (g *V2) LastPrice(symbol string) (decimal.Decimal, error) {
 	ticker, err := g.Ticker(symbol)
 	if err != nil {
 		return decimal.Zero, err
@@ -206,7 +173,7 @@ func (g *GateIO) LastPrice(symbol string) (decimal.Decimal, error) {
 	return ticker.Last, nil
 }
 
-func (g *GateIO) Last24hVolume(symbol string) (decimal.Decimal, error) {
+func (g *V2) Last24hVolume(symbol string) (decimal.Decimal, error) {
 	ticker, err := g.Ticker(symbol)
 	if err != nil {
 		return decimal.Zero, err
@@ -215,7 +182,7 @@ func (g *GateIO) Last24hVolume(symbol string) (decimal.Decimal, error) {
 }
 
 //// Depth
-//func (g *GateIO) orderBooks() string {
+//func (g *V2) orderBooks() string {
 //	var method string = "GET"
 //	url := "/orderBooks"
 //	param := ""
@@ -224,7 +191,7 @@ func (g *GateIO) Last24hVolume(symbol string) (decimal.Decimal, error) {
 //}
 
 // Depth of pair
-func (g *GateIO) OrderBook(symbol string) (ResponseOrderBook, error) {
+func (g *V2) OrderBook(symbol string) (ResponseOrderBook, error) {
 	var method string = "GET"
 	url := "/orderBook/" + symbol
 	param := ""
@@ -235,20 +202,20 @@ func (g *GateIO) OrderBook(symbol string) (ResponseOrderBook, error) {
 }
 
 // 获取Candle
-func (g *GateIO) CandleBySize(symbol string, period time.Duration, size int) (candle hs.Candle, err error) {
+func (g *V2) CandleBySize(symbol string, period time.Duration, size int) (candle hs.Candle, err error) {
 	groupSec := int(period.Seconds())
 	rangeHour := int(int64(size) * int64(period) / int64(time.Hour))
 	return g.GetCandle(symbol, groupSec, rangeHour)
 }
 
-func (g *GateIO) CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
+func (g *V2) CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
 	defer cancel()
 	return g.ReqCandlestick(ctx, symbol, clientId, period, from, to)
 }
 
 // 获取Candle
-func (g *GateIO) GetCandle(symbol string, groupSec, rangeHour int) (candles hs.Candle, err error) {
+func (g *V2) GetCandle(symbol string, groupSec, rangeHour int) (candles hs.Candle, err error) {
 	url := fmt.Sprintf("/candlestick2/%s?group_sec=%d&range_hour=%d", symbol, groupSec, rangeHour)
 	param := ""
 
@@ -273,7 +240,7 @@ func (g *GateIO) GetCandle(symbol string, groupSec, rangeHour int) (candles hs.C
 }
 
 // Trade History
-func (g *GateIO) TradeHistory(params string) (string, error) {
+func (g *V2) TradeHistory(params string) (string, error) {
 	url := "/TradeHistory/" + params
 	param := ""
 	data, err := g.httpDo(GET, url, param)
@@ -285,7 +252,7 @@ func (g *GateIO) TradeHistory(params string) (string, error) {
 }
 
 // Get account fund balances
-func (g *GateIO) SpotBalance() (map[string]decimal.Decimal, error) {
+func (g *V2) SpotBalance() (map[string]decimal.Decimal, error) {
 	url := "/private/balances"
 	param := ""
 	data, err := g.httpDo(POST, url, param)
@@ -323,7 +290,7 @@ func (g *GateIO) SpotBalance() (map[string]decimal.Decimal, error) {
 }
 
 // Get account fund balances
-func (g *GateIO) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
+func (g *V2) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 	url := "/private/balances"
 	param := ""
 	data, err := g.httpDo(POST, url, param)
@@ -350,7 +317,7 @@ func (g *GateIO) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 }
 
 //// get deposit address
-//func (g *GateIO) depositAddress(currency string) string {
+//func (g *V2) depositAddress(currency string) string {
 //	var method string = "POST"
 //	url := "/private/depositAddress"
 //	param := "currency=" + currency
@@ -359,7 +326,7 @@ func (g *GateIO) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 //}
 //
 //// get deposit withdrawal history
-//func (g *GateIO) depositsWithdrawals(start string, end string) string {
+//func (g *V2) depositsWithdrawals(start string, end string) string {
 //	var method string = "POST"
 //	url := "/private/depositsWithdrawals"
 //	param := "start=" + start + "&end=" + end
@@ -370,7 +337,7 @@ func (g *GateIO) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 
 // 订单类型("gtc"：普通订单（默认）；“ioc”：立即执行否则取消订单（Immediate-Or-Cancel，IOC）；"poc":被动委托（只挂单，不吃单）（Pending-Or-Cancelled，POC）)
 // Place order buy
-func (g *GateIO) BuyLimit(symbol, text string, price, amount decimal.Decimal) (orderId uint64, err error) {
+func (g *V2) BuyLimit(symbol, text string, price, amount decimal.Decimal) (orderId uint64, err error) {
 	resp, err := g.BuyOrder(symbol, price, amount, OrderTypeGTC, text)
 	if err != nil {
 		return 0, err
@@ -381,7 +348,7 @@ func (g *GateIO) BuyLimit(symbol, text string, price, amount decimal.Decimal) (o
 	return resp.OrderNumber, nil
 }
 
-func (g *GateIO) BuyOrder(symbol string, price, amount decimal.Decimal, orderType, text string) (resp ResponseOrder, err error) {
+func (g *V2) BuyOrder(symbol string, price, amount decimal.Decimal, orderType, text string) (resp ResponseOrder, err error) {
 	url := "/private/buy"
 	param := fmt.Sprintf("currencyPair=%s&rate=%s&amount=%s&orderType=%s&text=t-%s", symbol, price, amount, orderType, text)
 	err = g.request(POST, url, param, &resp)
@@ -389,7 +356,7 @@ func (g *GateIO) BuyOrder(symbol string, price, amount decimal.Decimal, orderTyp
 }
 
 // Place order sell
-func (g *GateIO) SellLimit(symbol, text string, price, amount decimal.Decimal) (orderId uint64, err error) {
+func (g *V2) SellLimit(symbol, text string, price, amount decimal.Decimal) (orderId uint64, err error) {
 	url := "/private/sell"
 	// 价格精度：5，数量精度：3
 	param := fmt.Sprintf("currencyPair=%s&rate=%s&amount=%s&orderType=%s&text=t-%s", symbol, price, amount, OrderTypeGTC, text)
@@ -404,15 +371,7 @@ func (g *GateIO) SellLimit(symbol, text string, price, amount decimal.Decimal) (
 	return res.OrderNumber, nil
 }
 
-// BuyMarket use Ticker's last price to place order.
-// may can't fill when big bull
-func (g *GateIO) BuyMarket(symbol exchange.Symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
-	return g.BuyFromOrderBook(symbol, clientOrderId, total)
-}
-
-// BuyFromTicker use Ticker's last price to place order.
-//// may can't fill when big bull
-func (g *GateIO) BuyFromTicker(symbol exchange.Symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
+func (g *V2) BuyMarket(symbol exchange.Symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
 	price, err := g.LastPrice(symbol.Symbol)
 	if err != nil {
 		return
@@ -422,25 +381,7 @@ func (g *GateIO) BuyFromTicker(symbol exchange.Symbol, clientOrderId string, tot
 	return g.BuyLimit(symbol.Symbol, clientOrderId, price, amount)
 }
 
-// BuyFromOrderBook use order book and take the sell1
-func (g *GateIO) BuyFromOrderBook(symbol exchange.Symbol, clientOrderId string, total decimal.Decimal) (orderId uint64, err error) {
-	ob, err := g.OrderBook(symbol.Symbol)
-	if err != nil {
-		return
-	}
-	price, amount := takeAsks(ob.Asks, total, symbol.PricePrecision, symbol.AmountPrecision)
-	return g.BuyLimit(symbol.Symbol, clientOrderId, price, amount)
-}
-
-// SellMarket use Ticker's last price to place order.
-// may can't fill when big bear
-func (g *GateIO) SellMarket(symbol exchange.Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
-	return g.SellFromOrderBook(symbol, clientOrderId, amount)
-}
-
-// SellFromTicker use Ticker's last price to place order.
-// may can't fill when big bear
-func (g *GateIO) SellFromTicker(symbol exchange.Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
+func (g *V2) SellMarket(symbol exchange.Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
 	price, err := g.LastPrice(symbol.Symbol)
 	if err != nil {
 		return
@@ -449,26 +390,16 @@ func (g *GateIO) SellFromTicker(symbol exchange.Symbol, clientOrderId string, am
 	return g.SellLimit(symbol.Symbol, clientOrderId, price, amount)
 }
 
-// SellFromOrderBook use order book and take the buy1
-func (g *GateIO) SellFromOrderBook(symbol exchange.Symbol, clientOrderId string, amount decimal.Decimal) (orderId uint64, err error) {
-	ob, err := g.OrderBook(symbol.Symbol)
-	if err != nil {
-		return
-	}
-	price := takeBids(ob.Bids, amount, symbol.PricePrecision, symbol.AmountPrecision)
-	return g.SellLimit(symbol.Symbol, clientOrderId, price, amount)
-}
-
-func (g *GateIO) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
+func (g *V2) BuyStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
 	return 0, nil
 }
 
-func (g *GateIO) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
+func (g *V2) SellStopLimit(symbol, clientOrderId string, price, amount, stopPrice decimal.Decimal) (orderId uint64, err error) {
 	return 0, nil
 }
 
 // Cancel order
-func (g *GateIO) CancelOrder(symbol string, orderNumber uint64) error {
+func (g *V2) CancelOrder(symbol string, orderNumber uint64) error {
 	url := "/private/cancelOrder"
 	param := fmt.Sprintf("currencyPair=%s&orderNumber=%d", symbol, orderNumber)
 	var res ResponseCancel
@@ -478,19 +409,19 @@ func (g *GateIO) CancelOrder(symbol string, orderNumber uint64) error {
 }
 
 // Cancel all orders
-func (g *GateIO) CancelAllOrders(types string, currencyPair string) (res ResponseCancel, err error) {
+func (g *V2) CancelAllOrders(types string, currencyPair string) (res ResponseCancel, err error) {
 	url := "/private/cancelAllOrders"
 	param := "type=" + types + "&currencyPair=" + currencyPair
 	err = g.request(POST, url, param, &res)
 	return
 }
 
-func (g *GateIO) GetOrderById(orderId uint64, symbol string) (order exchange.Order, err error) {
+func (g *V2) GetOrderById(orderId uint64, symbol string) (order exchange.Order, err error) {
 	return g.GetOrder(orderId, symbol)
 }
 
 // Get order as string, just for test gate's getOrder interface, only use in gateio_test.go
-func (g *GateIO) GetOrderString(orderId uint64, symbol string) (string, error) {
+func (g *V2) GetOrderString(orderId uint64, symbol string) (string, error) {
 	url := "/private/getOrder"
 	param := fmt.Sprintf("orderNumber=%d&currencyPair=%s", orderId, symbol)
 	data, err := g.httpDo(POST, url, param)
@@ -502,7 +433,7 @@ func (g *GateIO) GetOrderString(orderId uint64, symbol string) (string, error) {
 }
 
 // Get order status
-func (g *GateIO) GetOrder(orderId uint64, symbol string) (order exchange.Order, err error) {
+func (g *V2) GetOrder(orderId uint64, symbol string) (order exchange.Order, err error) {
 	url := "/private/getOrder"
 	param := fmt.Sprintf("orderNumber=%d&currencyPair=%s", orderId, symbol)
 	var res ResponseGetOrder
@@ -532,7 +463,7 @@ func (g *GateIO) GetOrder(orderId uint64, symbol string) (order exchange.Order, 
 	return
 }
 
-func (g *GateIO) IsFullFilled(symbol string, orderId uint64) (order exchange.Order, filled bool, err error) {
+func (g *V2) IsFullFilled(symbol string, orderId uint64) (order exchange.Order, filled bool, err error) {
 	order, err = g.GetOrder(orderId, symbol)
 	if err != nil {
 		return
@@ -542,7 +473,7 @@ func (g *GateIO) IsFullFilled(symbol string, orderId uint64) (order exchange.Ord
 }
 
 // Get my open order list
-func (g *GateIO) OpenOrders() (res ResponseOpenOrders, err error) {
+func (g *V2) OpenOrders() (res ResponseOpenOrders, err error) {
 	url := "/private/openOrders"
 	param := ""
 	err = g.request(POST, url, param, &res)
@@ -550,7 +481,7 @@ func (g *GateIO) OpenOrders() (res ResponseOpenOrders, err error) {
 }
 
 // 获取我的24小时内成交记录
-func (g *GateIO) MyTradeHistory(currencyPair string) (*MyTradeHistoryResult, error) {
+func (g *V2) MyTradeHistory(currencyPair string) (*MyTradeHistoryResult, error) {
 	method := "POST"
 	url := "/private/TradeHistory"
 	param := "orderNumber=&currencyPair=" + currencyPair
@@ -563,7 +494,7 @@ func (g *GateIO) MyTradeHistory(currencyPair string) (*MyTradeHistoryResult, err
 }
 
 // Get my last 24h trades
-//func (g *GateIO) withdraw(currency string, amount string, address string) string {
+//func (g *V2) withdraw(currency string, amount string, address string) string {
 //	var method string = "POST"
 //	url := "/private/withdraw"
 //	param := "currency=" + currency + "&amount=" + amount + "&address=" + address
@@ -571,7 +502,7 @@ func (g *GateIO) MyTradeHistory(currencyPair string) (*MyTradeHistoryResult, err
 //	return ret
 //}
 
-func (g *GateIO) getSign(params string) string {
+func (g *V2) getSign(params string) string {
 	key := []byte(g.Secret)
 	mac := hmac.New(sha512.New, key)
 	mac.Write([]byte(params))
@@ -581,7 +512,7 @@ func (g *GateIO) getSign(params string) string {
 /**
 *  http request
  */
-func (g *GateIO) httpDo(method string, url string, param string) ([]byte, error) {
+func (g *V2) httpDo(method string, url string, param string) ([]byte, error) {
 	client := &http.Client{}
 	if method == GET {
 		url = g.publicBaseUrl + url
@@ -621,7 +552,7 @@ func (g *GateIO) httpDo(method string, url string, param string) ([]byte, error)
 	return body, nil
 }
 
-func (g *GateIO) request(method string, url string, param string, result interface{}) error {
+func (g *V2) request(method string, url string, param string, result interface{}) error {
 	client := &http.Client{}
 	if method == GET {
 		url = g.publicBaseUrl + url
@@ -664,7 +595,7 @@ func (g *GateIO) request(method string, url string, param string, result interfa
 }
 
 // always call ReqPing use context context with a timeout
-func (g *GateIO) ReqPing(ctx context.Context, id int64) (string, error) {
+func (g *V2) ReqPing(ctx context.Context, id int64) (string, error) {
 	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
 	ch := make(chan string, 1)
 	client.SetHandler(
@@ -696,7 +627,7 @@ func (g *GateIO) ReqPing(ctx context.Context, id int64) (string, error) {
 	}
 }
 
-func (g *GateIO) ReqTime(ctx context.Context, id int64) (int64, error) {
+func (g *V2) ReqTime(ctx context.Context, id int64) (int64, error) {
 	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
 	ch := make(chan int64, 1)
 	client.SetHandler(
@@ -728,7 +659,7 @@ func (g *GateIO) ReqTime(ctx context.Context, id int64) (int64, error) {
 	}
 }
 
-func (g *GateIO) ReqTicker(ctx context.Context, id int64, symbol string, period time.Duration) (hs.Ticker, error) {
+func (g *V2) ReqTicker(ctx context.Context, id int64, symbol string, period time.Duration) (hs.Ticker, error) {
 	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
 	ch := make(chan hs.Ticker, 1)
 	client.SetHandler(
@@ -761,7 +692,7 @@ func (g *GateIO) ReqTicker(ctx context.Context, id int64, symbol string, period 
 	}
 }
 
-func (g *GateIO) SubTicker(id int64, symbol string, responseHandler exchange.ResponseHandler) {
+func (g *V2) SubTicker(id int64, symbol string, responseHandler exchange.ResponseHandler) {
 	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
 	client.SetHandler(
 		func() {
@@ -772,12 +703,12 @@ func (g *GateIO) SubTicker(id int64, symbol string, responseHandler exchange.Res
 	client.Connect(true)
 }
 
-func (g *GateIO) UnsubTicker(id int64, symbol string) {
+func (g *V2) UnsubTicker(id int64, symbol string) {
 	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
 	client.UnsubTicker(id)
 }
 
-func (g *GateIO) ReqCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
+func (g *V2) ReqCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
 	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
 	ch := make(chan hs.Candle, 1)
 	id := time.Now().Unix()
@@ -806,7 +737,7 @@ func (g *GateIO) ReqCandlestick(ctx context.Context, symbol, clientId string, pe
 	}
 }
 
-func (g *GateIO) SubCandlestick(symbol, clientId string, period time.Duration,
+func (g *V2) SubCandlestick(symbol, clientId string, period time.Duration,
 	responseHandler exchange.ResponseHandler) {
 	id := time.Now().Unix()
 	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
@@ -819,13 +750,13 @@ func (g *GateIO) SubCandlestick(symbol, clientId string, period time.Duration,
 	client.Connect(true)
 }
 
-func (g *GateIO) UnsubCandlestick(symbol, clientId string) {
+func (g *V2) UnsubCandlestick(symbol, clientId string) {
 	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
 	id := time.Now().Unix()
 	client.UnsubCandle(id)
 }
 
-func (g *GateIO) ReqOrder(ctx context.Context, symbol, clientId string) (orders []exchange.Order, err error) {
+func (g *V2) ReqOrder(ctx context.Context, symbol, clientId string) (orders []exchange.Order, err error) {
 	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
 	id := time.Now().Unix()
 	ch := make(chan ResponseReqOrder, 10)
@@ -879,7 +810,7 @@ func (g *GateIO) ReqOrder(ctx context.Context, symbol, clientId string) (orders 
 	}
 }
 
-func (g *GateIO) SubOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
+func (g *V2) SubOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
 	id := time.Now().Unix()
 	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
 	client.SetHandler(
@@ -891,20 +822,20 @@ func (g *GateIO) SubOrder(symbol, clientId string, responseHandler exchange.Resp
 	client.Connect(true)
 }
 
-func (g *GateIO) UnsubOrder(symbol, clientId string) {
+func (g *V2) UnsubOrder(symbol, clientId string) {
 	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
 	id := time.Now().Unix()
 	client.UnsubOrder(id, []string{symbol})
 }
 
-func (g *GateIO) ReqBalance(ctx context.Context, currencies []string) {
+func (g *V2) ReqBalance(ctx context.Context, currencies []string) {
 
 }
 
-func (g *GateIO) SubBalance(currencies []string) {
+func (g *V2) SubBalance(currencies []string) {
 
 }
 
-func (g *GateIO) UnsubBalance(currencies []string) {
+func (g *V2) UnsubBalance(currencies []string) {
 
 }
