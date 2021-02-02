@@ -1,3 +1,14 @@
+# gate.io API 封装说明
+
+此文档中，记录了gate接口的一些重要细节和封装后的使用注意事项。
+
+# V4版本API
+
+V4版本分为
+- spot: 现货
+- margin: 杠杆
+- future: 永续合约
+- delivery: 交割合约
 
 ### `order.query`
 

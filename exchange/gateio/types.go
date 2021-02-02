@@ -1,6 +1,9 @@
 package gateio
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"github.com/xyths/hs/exchange"
+)
 
 // from api result
 type RawTrade struct {
@@ -150,7 +153,7 @@ type ResponseCandles struct {
 }
 
 // price, amount
-type Quote [2]float64
+type Quote = exchange.Quote
 
 type ResponseOrderBook struct {
 	Result string

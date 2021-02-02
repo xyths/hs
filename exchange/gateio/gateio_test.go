@@ -14,6 +14,7 @@ import (
 )
 
 var g *GateIO
+var g4 *SpotV4
 
 func TestMain(m *testing.M) {
 	l, err := hs.NewZapLogger(hs.LogConf{
@@ -30,8 +31,12 @@ func TestMain(m *testing.M) {
 	apiKey := os.Getenv("apiKey")
 	secretKey := os.Getenv("secretKey")
 	host := os.Getenv("host")
+
+	v4apiKey := os.Getenv("v4api")
+	v4secretKey := os.Getenv("v4secret")
 	g = New(apiKey, secretKey, host, l.Sugar())
 
+	g4 = NewGateIOV4(v4apiKey, v4secretKey, host, l.Sugar())
 	os.Exit(m.Run())
 }
 

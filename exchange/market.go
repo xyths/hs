@@ -29,3 +29,12 @@ type Ticker struct {
 	High24hr      decimal.Decimal // 24小时最高价
 	Low24hr       decimal.Decimal // 24小时最低价
 }
+
+// price, amount
+type Quote [2]float64
+
+type OrderBook struct {
+	Id   int
+	Asks []Quote // sell
+	Bids []Quote // buy
+}

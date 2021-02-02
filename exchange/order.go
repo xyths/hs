@@ -18,10 +18,13 @@ const (
 	Cancelled             = 4
 )
 
+// Order is common order type between all exchanges, use for exchange interface
 type Order struct {
 	Id            uint64 // Id should be uint64
 	ClientOrderId string `bson:"clientOrderId"`
 
+	// gate: limit
+	// huobi:
 	Type      string
 	Symbol    string
 	Price     decimal.Decimal

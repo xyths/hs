@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gateio/gateapi-go/v5"
 	"github.com/shopspring/decimal"
 	"github.com/xyths/hs"
 	"github.com/xyths/hs/convert"
 	"github.com/xyths/hs/exchange"
 	"strings"
+	"time"
 )
 
 func (g GateIO) FormatSymbol(base, quote string) string {
@@ -204,4 +206,76 @@ func takeBids(bids []Quote, amount decimal.Decimal, pricePrecision, amountPrecis
 		}
 	}
 	return
+}
+
+// getInterval convert duration to gate candle period
+// use in V4 API
+func getInterval(period time.Duration) string {
+	switch period {
+	case time.Second * 10:
+		return "10s"
+	case time.Minute:
+		return "1m"
+	case time.Minute * 5:
+		return "5m"
+	case time.Minute * 15:
+		return "15m"
+	case time.Minute * 30:
+		return "30m"
+	case time.Hour:
+		return "1h"
+	case time.Hour * 4:
+		return "4h"
+	case time.Hour * 8:
+		return "8h"
+	case time.Hour * 24:
+		return "1d"
+	case time.Hour * 24 * 7:
+		return "7d"
+	default:
+		return "1d"
+	}
+}
+
+func convertOrder(o gateapi.Order) exchange.Order {
+	return exchange.Order{
+		Id:            convert.StrToUint64(o.Id),
+		ClientOrderId: o.Text,
+		Type:          o.Type, // limit
+		Symbol:        o.CurrencyPair,
+		Price:         decimal.RequireFromString(o.Price),
+		Amount:        decimal.RequireFromString(o.Amount),
+		Timestamp:     convert.StrToInt64(o.CreateTime),
+		Status:        o.Status,
+	}
+}
+
+func convertTicker(t gateapi.Ticker) exchange.Ticker {
+	return exchange.Ticker{
+		Last:          decimal.RequireFromString(t.Last),
+		LowestAsk:     decimal.RequireFromString(t.LowestAsk),
+		HighestBid:    decimal.RequireFromString(t.HighestBid),
+		PercentChange: decimal.RequireFromString(t.ChangePercentage),
+		BaseVolume:    decimal.RequireFromString(t.BaseVolume),
+		QuoteVolume:   decimal.RequireFromString(t.QuoteVolume),
+		High24hr:      decimal.RequireFromString(t.High24h),
+		Low24hr:       decimal.RequireFromString(t.Low24h),
+	}
+}
+
+func convertOrderBook(ob gateapi.OrderBook) exchange.OrderBook {
+	cob := exchange.OrderBook{Id: int(ob.Id)}
+	for _, ask := range ob.Asks {
+		if len(ask) != 2 {
+			continue
+		}
+		cob.Asks = append(cob.Asks, exchange.Quote{convert.StrToFloat64(ask[0]), convert.StrToFloat64(ask[1])})
+	}
+	for _, bid := range ob.Bids {
+		if len(bid) != 2 {
+			continue
+		}
+		cob.Bids = append(cob.Bids, exchange.Quote{convert.StrToFloat64(bid[0]), convert.StrToFloat64(bid[1])})
+	}
+	return cob
 }

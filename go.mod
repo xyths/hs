@@ -3,7 +3,9 @@ module github.com/xyths/hs
 go 1.13
 
 require (
+	github.com/antihax/optional v1.0.0
 	github.com/aws/aws-sdk-go v1.34.18 // indirect
+	github.com/gateio/gateapi-go/v5 v5.18.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/huobirdcenter/huobi_golang v0.0.0-20200821050931-75de5c6fcc0e
 	github.com/klauspost/compress v1.10.11 // indirect

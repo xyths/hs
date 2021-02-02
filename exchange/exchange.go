@@ -49,3 +49,14 @@ type Exchange interface {
 	RestAPIExchange
 	WsAPIExchange
 }
+
+type Balance struct {
+	Currency  string
+	Available decimal.Decimal
+	Locked    decimal.Decimal
+}
+
+type AccountBalance struct {
+	Type       string // spot, margin, future
+	Currencies []Balance
+}
