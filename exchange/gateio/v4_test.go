@@ -45,6 +45,16 @@ func TestSpotV4_CandleBySize(t *testing.T) {
 				candle.Timestamp[j], candle.Open[j], candle.High[j], candle.Low[j], candle.Close[j], candle.Volume[j])
 		}
 	})
+
+	// weekly candle
+	t.Run("timestamp of W", func(t *testing.T) {
+		candle, err := g4.CandleBySize(ctx, "btc_usdt", time.Hour*24*7, 10)
+		require.NoError(t, err)
+		for j := 0; j < candle.Length(); j++ {
+			t.Logf("[%d] %d %f %f %f %f %f", j,
+				candle.Timestamp[j], candle.Open[j], candle.High[j], candle.Low[j], candle.Close[j], candle.Volume[j])
+		}
+	})
 }
 
 func TestSpotV4_AllSymbols(t *testing.T) {

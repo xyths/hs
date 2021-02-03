@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	v4secretKey := os.Getenv("v4secret")
 	g = New(apiKey, secretKey, host, l.Sugar())
 
-	g4 = NewGateIOV4(v4apiKey, v4secretKey, host, l.Sugar())
+	g4 = NewSpotV4(v4apiKey, v4secretKey, host, l.Sugar())
 	os.Exit(m.Run())
 }
 

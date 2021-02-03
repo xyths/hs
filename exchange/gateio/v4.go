@@ -73,9 +73,16 @@ func (g *SpotV4) CandleBySize(ctx context.Context, symbol string, period time.Du
 		}
 		c, err := g.listCandlesticks(ctx, symbol, options)
 		if err != nil {
-			return candle, err
+			if candle.Length() > 0 {
+				return candle, nil
+			} else {
+				return candle, err
+			}
 		}
 		candle.Add(c)
+		if c.Length() < int(options.Limit.Value()) {
+			break
+		}
 	}
 	return candle, nil
 }
