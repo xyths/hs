@@ -21,22 +21,32 @@ type SpotV4 struct {
 	Key    string
 	Secret string
 	client *gateapi.APIClient
+	wsHost string
+	wsPath string
 
 	Logger *zap.SugaredLogger
 }
 
 func NewSpotV4(key, secret, host string, logger *zap.SugaredLogger) *SpotV4 {
 	client := gateapi.NewAPIClient(gateapi.NewConfiguration())
-	return &SpotV4{Key: key, Secret: secret, client: client, Logger: logger}
+	return &SpotV4{Key: key, Secret: secret, client: client, wsHost: host, wsPath: "v4", Logger: logger}
 }
 
 // class function layout
-// 	 common public
-//          private
-// 	 spot   public
-//          private
-//   future public
-//          private
+//  - public
+//    - RESTful
+//      - common
+//      - spot
+//    - ws
+//      - common
+//      - spot
+//  - private
+//    - RESTful
+//      - common
+//      - spot
+//    - ws
+//      - common
+//      - spot
 
 // list all currencies
 func (g *SpotV4) Currencies(ctx context.Context) ([]gateapi.Currency, error) {
@@ -296,6 +306,14 @@ func (g *SpotV4) LastPrice(ctx context.Context, symbol string) (decimal.Decimal,
 	return ticker.Last, nil
 }
 
+func (g *SpotV4) Last24hVolume(ctx context.Context, symbol string) (decimal.Decimal, error) {
+	ticker, err := g.Ticker(ctx, symbol)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	return ticker.BaseVolume, nil
+}
+
 // API限制最大数目是1000根
 const maxCandleLength = 1000
 
@@ -309,11 +327,12 @@ func (g *SpotV4) listCandlesticks(ctx context.Context, symbol string, options *g
 		c := result[i]
 		candles.Append(hs.Ticker{
 			Timestamp: convert.StrToInt64(c[0]),
-			Volume:    convert.StrToFloat64(c[1]),
-			Close:     convert.StrToFloat64(c[2]),
-			High:      convert.StrToFloat64(c[3]),
-			Low:       convert.StrToFloat64(c[4]),
-			Open:      convert.StrToFloat64(c[5]),
+			// volume count by quote currency, eg. BTC_USDT is xxx USDT
+			Volume: convert.StrToFloat64(c[1]),
+			Close:  convert.StrToFloat64(c[2]),
+			High:   convert.StrToFloat64(c[3]),
+			Low:    convert.StrToFloat64(c[4]),
+			Open:   convert.StrToFloat64(c[5]),
 		})
 	}
 	return candles, nil
@@ -389,21 +408,21 @@ func (g *SpotV4) sellFromOrderBook(ctx context.Context, symbol exchange.Symbol, 
 	return g.SellLimit(ctx, symbol.Symbol, clientOrderId, price, amount)
 }
 
-//func (g *SpotV4) SubscribeOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
-//	g.SubOrder(symbol, clientId, responseHandler)
-//}
-//
-//func (g *SpotV4) UnsubscribeOrder(symbol, clientId string) {
-//	g.UnsubOrder(symbol, clientId)
-//}
-//
-//func (g *SpotV4) SubscribeCandlestick(symbol, clientId string, period time.Duration, responseHandler exchange.ResponseHandler) {
-//	g.SubCandlestick(symbol, clientId, period, responseHandler)
-//}
-//
-//func (g *SpotV4) UnsubscribeCandlestick(symbol, clientId string, period time.Duration) {
-//	g.UnsubCandlestick(symbol, clientId)
-//}
+func (g *SpotV4) SubscribeOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
+	g.SubOrder(symbol, clientId, responseHandler)
+}
+
+func (g *SpotV4) UnsubscribeOrder(symbol, clientId string) {
+	g.UnsubOrder(symbol, clientId)
+}
+
+func (g *SpotV4) SubscribeCandlestick(symbol, clientId string, period time.Duration, responseHandler exchange.ResponseHandler) {
+	g.SubCandlestick(symbol, clientId, period, responseHandler)
+}
+
+func (g *SpotV4) UnsubscribeCandlestick(symbol, clientId string, period time.Duration) {
+	g.UnsubCandlestick(symbol, clientId)
+}
 
 func (g *SpotV4) SubscribeCandlestickWithReq(symbol, clientId string, period time.Duration, responseHandler exchange.ResponseHandler) {
 	panic("implement me")
@@ -422,14 +441,6 @@ func (g *SpotV4) UnsubscribeCandlestickWithReq(symbol, clientId string, period t
 //	return
 //}
 
-func (g *SpotV4) Last24hVolume(ctx context.Context, symbol string) (decimal.Decimal, error) {
-	ticker, err := g.Ticker(ctx, symbol)
-	if err != nil {
-		return decimal.Zero, err
-	}
-	return ticker.BaseVolume, nil
-}
-
 //// Depth
 //func (g *SpotV4) orderBooks() string {
 //	var method string = "GET"
@@ -447,37 +458,6 @@ func (g *SpotV4) orderBook(ctx context.Context, symbol string) (exchange.OrderBo
 	}
 	return convertOrderBook(ob), err
 }
-
-//func (g *SpotV4) CandleFrom(symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
-//	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
-//	defer cancel()
-//	return g.ReqCandlestick(ctx, symbol, clientId, period, from, to)
-//}
-
-// 获取Candle
-//func (g *SpotV4) GetCandle(symbol string, groupSec, rangeHour int) (candles hs.Candle, err error) {
-//	url := fmt.Sprintf("/candlestick2/%s?group_sec=%d&range_hour=%d", symbol, groupSec, rangeHour)
-//	param := ""
-//
-//	var result ResponseCandles
-//	err = g.request(GET, url, param, &result)
-//	if err != nil {
-//		return candles, err
-//	}
-//	candles = hs.NewCandle(len(result.Data))
-//	for i := 0; i < len(result.Data); i++ {
-//		c := result.Data[i]
-//		candles.Append(hs.Ticker{
-//			Timestamp: int64(c[0] / 1000), // covert ms to s
-//			Volume:    c[1],
-//			Close:     c[2],
-//			High:      c[3],
-//			Low:       c[4],
-//			Open:      c[5],
-//		})
-//	}
-//	return
-//}
 
 // Trade History
 //func (g *SpotV4) TradeHistory(params string) (string, error) {
@@ -541,238 +521,238 @@ func (g *SpotV4) SellStopLimit(symbol, clientOrderId string, price, amount, stop
 //}
 
 // always call ReqPing use context context with a timeout
-//func (g *SpotV4) ReqPing(ctx context.Context, id int64) (string, error) {
-//client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
-//ch := make(chan string, 1)
-//client.SetHandler(
-//	func() {
-//		g.Logger.Debug("successfully connected")
-//		client.Ping(id)
-//	},
-//	func(resp interface{}) {
-//		pong, ok := resp.(string)
-//		if ok {
-//			g.Logger.Debugf("handler got response: %s", pong)
-//			ch <- pong
-//		} else {
-//			g.Logger.Error("wrong response")
-//		}
-//	},
-//)
-//client.Connect(true)
-//defer client.Close()
-//
-//for {
-//	select {
-//	case pong := <-ch:
-//		g.Logger.Debugf("response: %s", pong)
-//		return pong, nil
-//	case <-ctx.Done():
-//		return "", ctx.Err()
-//	}
-//}
-//}
+func (g *SpotV4) ReqPing(ctx context.Context, id int64) (string, error) {
+	client := new(WebsocketClient).Init(g.wsHost, g.wsPath, g.Logger)
+	ch := make(chan string, 1)
+	client.SetHandler(
+		func() {
+			g.Logger.Debug("successfully connected")
+			client.Ping(id)
+		},
+		func(resp interface{}) {
+			pong, ok := resp.(string)
+			if ok {
+				g.Logger.Debugf("handler got response: %s", pong)
+				ch <- pong
+			} else {
+				g.Logger.Error("wrong response")
+			}
+		},
+	)
+	client.Connect(true)
+	defer client.Close()
 
-//func (g *SpotV4) ReqTime(ctx context.Context, id int64) (int64, error) {
-//	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
-//	ch := make(chan int64, 1)
-//	client.SetHandler(
-//		func() {
-//			g.Logger.Debug("successfully connected")
-//			client.Time(id)
-//		},
-//		client.TimeHandler(func(resp interface{}) {
-//			t, ok := resp.(int64)
-//			if ok {
-//				g.Logger.Debugf("handler got response: %d", t)
-//				ch <- t
-//			} else {
-//				g.Logger.Error("wrong response")
-//			}
-//		}),
-//	)
-//	client.Connect(true)
-//	defer client.Close()
-//
-//	for {
-//		select {
-//		case t := <-ch:
-//			g.Logger.Debugf("response timestamp: %d", t)
-//			return t, nil
-//		case <-ctx.Done():
-//			return 0, ctx.Err()
-//		}
-//	}
-//}
-//
-//func (g *SpotV4) ReqTicker(ctx context.Context, id int64, symbol string, period time.Duration) (hs.Ticker, error) {
-//	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
-//	ch := make(chan hs.Ticker, 1)
-//	client.SetHandler(
-//		func() {
-//			g.Logger.Debug("successfully connected")
-//			client.ReqTicker(id, symbol, int64(period.Seconds()))
-//		},
-//		client.ReqTickerHandler(func(resp interface{}) {
-//			t1, ok := resp.(ResponseWsTicker)
-//			if !ok {
-//				g.Logger.Error("wrong response")
-//				return
-//			}
-//			g.Logger.Debugf("handler got raw response: %d", t1)
-//			t2, _ := parseTicker(t1)
-//			ch <- t2
-//		}),
-//	)
-//	client.Connect(true)
-//	defer client.Close()
-//
-//	for {
-//		select {
-//		case t := <-ch:
-//			g.Logger.Debugf("response timestamp: %d", t)
-//			return t, nil
-//		case <-ctx.Done():
-//			return hs.Ticker{}, ctx.Err()
-//		}
-//	}
-//}
-//
-//func (g *SpotV4) SubTicker(id int64, symbol string, responseHandler exchange.ResponseHandler) {
-//	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
-//	client.SetHandler(
-//		func() {
-//			client.SubTicker(id, symbol)
-//		},
-//		client.SubTickerHandler(responseHandler),
-//	)
-//	client.Connect(true)
-//}
-//
-//func (g *SpotV4) UnsubTicker(id int64, symbol string) {
-//	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
-//	client.UnsubTicker(id)
-//}
-//
-//func (g *SpotV4) ReqCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
-//	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
-//	ch := make(chan hs.Candle, 1)
-//	id := time.Now().Unix()
-//	client.SetHandler(
-//		func() {
-//			client.ReqCandle(id, symbol, from.Unix(), to.Unix(), int64(period.Seconds()))
-//		},
-//		client.ReqCandleHandler(func(resp interface{}) {
-//			r, ok := resp.(hs.Candle)
-//			if !ok {
-//				return
-//			}
-//			ch <- r
-//		}),
-//	)
-//	client.Connect(true)
-//	defer client.Close()
-//
-//	for {
-//		select {
-//		case c := <-ch:
-//			return c, nil
-//		case <-ctx.Done():
-//			return hs.Candle{}, ctx.Err()
-//		}
-//	}
-//}
-//
-//func (g *SpotV4) SubCandlestick(symbol, clientId string, period time.Duration,
-//	responseHandler exchange.ResponseHandler) {
-//	id := time.Now().Unix()
-//	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
-//	client.SetHandler(
-//		func() {
-//			client.SubCandle(id, symbol, int64(period.Seconds()))
-//		},
-//		client.SubCandleHandler(responseHandler),
-//	)
-//	client.Connect(true)
-//}
-//
-//func (g *SpotV4) UnsubCandlestick(symbol, clientId string) {
-//	client := new(WebsocketClient).Init(g.host, g.wsPath, g.Logger)
-//	id := time.Now().Unix()
-//	client.UnsubCandle(id)
-//}
-//
-//func (g *SpotV4) ReqOrder(ctx context.Context, symbol, clientId string) (orders []exchange.Order, err error) {
-//	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
-//	id := time.Now().Unix()
-//	ch := make(chan ResponseReqOrder, 10)
-//	done := make(chan int, 1)
-//	var offset uint64 = 0
-//	var limit uint64 = 10
-//	client.SetHandler(
-//		func() {
-//			client.ReqOrder(id, symbol, offset, limit)
-//		},
-//		client.ReqOrderHandler(func(resp interface{}) {
-//			if resp == nil {
-//				g.Logger.Debug("no open order")
-//				done <- 1
-//				return
-//			}
-//			r, ok := resp.(ResponseReqOrder)
-//			if !ok {
-//				g.Logger.Debug("response not ok")
-//				done <- 1
-//				return
-//			}
-//			ch <- r
-//		}),
-//	)
-//	client.Connect(true)
-//	defer client.Close()
-//
-//	for {
-//		select {
-//		case <-done:
-//			return
-//		case batch := <-ch:
-//			g.Logger.Debugf("received batch data, offset %d, limit %d, total %d, len %d", batch.Offset, batch.Limit, batch.Total, len(batch.Records))
-//			if batch.Limit <= batch.Total {
-//				offset += limit
-//				client.ReqOrder(id, symbol, offset, limit)
-//			}
-//			if o, err := parseOrdersQuery(batch.Records); err == nil {
-//				g.Logger.Debugf("parsed %d orders", len(o))
-//				orders = append(orders, o...)
-//			} else {
-//				g.Logger.Errorf("got bad order: %s", err)
-//			}
-//			if batch.Offset+int64(len(batch.Records)) >= batch.Total {
-//				return
-//			}
-//		case <-ctx.Done():
-//			return orders, ctx.Err()
-//		}
-//	}
-//}
-//
-//func (g *SpotV4) SubOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
-//	id := time.Now().Unix()
-//	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
-//	client.SetHandler(
-//		func() {
-//			client.SubOrder(id, []string{symbol})
-//		},
-//		client.SubOrderHandler(responseHandler),
-//	)
-//	client.Connect(true)
-//}
-//
-//func (g *SpotV4) UnsubOrder(symbol, clientId string) {
-//	client := new(PrivateWebsocketClient).Init(g.host, g.wsPath, g.Key, g.Secret, g.Logger)
-//	id := time.Now().Unix()
-//	client.UnsubOrder(id, []string{symbol})
-//}
+	for {
+		select {
+		case pong := <-ch:
+			g.Logger.Debugf("response: %s", pong)
+			return pong, nil
+		case <-ctx.Done():
+			return "", ctx.Err()
+		}
+	}
+}
+
+func (g *SpotV4) ReqTime(ctx context.Context, id int64) (int64, error) {
+	client := new(WebsocketClient).Init(g.wsHost, g.wsPath, g.Logger)
+	ch := make(chan int64, 1)
+	client.SetHandler(
+		func() {
+			g.Logger.Debug("successfully connected")
+			client.Time(id)
+		},
+		client.TimeHandler(func(resp interface{}) {
+			t, ok := resp.(int64)
+			if ok {
+				g.Logger.Debugf("handler got response: %d", t)
+				ch <- t
+			} else {
+				g.Logger.Error("wrong response")
+			}
+		}),
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case t := <-ch:
+			g.Logger.Debugf("response timestamp: %d", t)
+			return t, nil
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		}
+	}
+}
+
+func (g *SpotV4) ReqTicker(ctx context.Context, id int64, symbol string, period time.Duration) (hs.Ticker, error) {
+	client := new(WebsocketClient).Init(g.wsHost, g.wsPath, g.Logger)
+	ch := make(chan hs.Ticker, 1)
+	client.SetHandler(
+		func() {
+			g.Logger.Debug("successfully connected")
+			client.ReqTicker(id, symbol, int64(period.Seconds()))
+		},
+		client.ReqTickerHandler(func(resp interface{}) {
+			t1, ok := resp.(ResponseWsTicker)
+			if !ok {
+				g.Logger.Error("wrong response")
+				return
+			}
+			g.Logger.Debugf("handler got raw response: %d", t1)
+			t2, _ := parseTicker(t1)
+			ch <- t2
+		}),
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case t := <-ch:
+			g.Logger.Debugf("response timestamp: %d", t)
+			return t, nil
+		case <-ctx.Done():
+			return hs.Ticker{}, ctx.Err()
+		}
+	}
+}
+
+func (g *SpotV4) SubTicker(id int64, symbol string, responseHandler exchange.ResponseHandler) {
+	client := new(WebsocketClient).Init(g.wsHost, g.wsPath, g.Logger)
+	client.SetHandler(
+		func() {
+			client.SubTicker(id, symbol)
+		},
+		client.SubTickerHandler(responseHandler),
+	)
+	client.Connect(true)
+}
+
+func (g *SpotV4) UnsubTicker(id int64, symbol string) {
+	client := new(WebsocketClient).Init(g.wsHost, g.wsPath, g.Logger)
+	client.UnsubTicker(id)
+}
+
+func (g *SpotV4) ReqCandlestick(ctx context.Context, symbol, clientId string, period time.Duration, from, to time.Time) (hs.Candle, error) {
+	client := new(WebsocketClient).Init(g.wsHost, g.wsPath, g.Logger)
+	ch := make(chan hs.Candle, 1)
+	id := time.Now().Unix()
+	client.SetHandler(
+		func() {
+			client.ReqCandle(id, symbol, from.Unix(), to.Unix(), int64(period.Seconds()))
+		},
+		client.ReqCandleHandler(func(resp interface{}) {
+			r, ok := resp.(hs.Candle)
+			if !ok {
+				return
+			}
+			ch <- r
+		}),
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case c := <-ch:
+			return c, nil
+		case <-ctx.Done():
+			return hs.Candle{}, ctx.Err()
+		}
+	}
+}
+
+func (g *SpotV4) SubCandlestick(symbol, clientId string, period time.Duration,
+	responseHandler exchange.ResponseHandler) {
+	id := time.Now().Unix()
+	client := new(WebsocketClient).Init(g.wsHost, g.wsPath, g.Logger)
+	client.SetHandler(
+		func() {
+			client.SubCandle(id, symbol, int64(period.Seconds()))
+		},
+		client.SubCandleHandler(responseHandler),
+	)
+	client.Connect(true)
+}
+
+func (g *SpotV4) UnsubCandlestick(symbol, clientId string) {
+	client := new(WebsocketClient).Init(g.wsHost, g.wsPath, g.Logger)
+	id := time.Now().Unix()
+	client.UnsubCandle(id)
+}
+
+func (g *SpotV4) ReqOrder(ctx context.Context, symbol, clientId string) (orders []exchange.Order, err error) {
+	client := new(PrivateWebsocketClient).Init(g.wsHost, g.wsPath, g.Key, g.Secret, g.Logger)
+	id := time.Now().Unix()
+	ch := make(chan ResponseReqOrder, 10)
+	done := make(chan int, 1)
+	var offset uint64 = 0
+	var limit uint64 = 10
+	client.SetHandler(
+		func() {
+			client.ReqOrder(id, symbol, offset, limit)
+		},
+		client.ReqOrderHandler(func(resp interface{}) {
+			if resp == nil {
+				g.Logger.Debug("no open order")
+				done <- 1
+				return
+			}
+			r, ok := resp.(ResponseReqOrder)
+			if !ok {
+				g.Logger.Debug("response not ok")
+				done <- 1
+				return
+			}
+			ch <- r
+		}),
+	)
+	client.Connect(true)
+	defer client.Close()
+
+	for {
+		select {
+		case <-done:
+			return
+		case batch := <-ch:
+			g.Logger.Debugf("received batch data, offset %d, limit %d, total %d, len %d", batch.Offset, batch.Limit, batch.Total, len(batch.Records))
+			if batch.Limit <= batch.Total {
+				offset += limit
+				client.ReqOrder(id, symbol, offset, limit)
+			}
+			if o, err := parseOrdersQuery(batch.Records); err == nil {
+				g.Logger.Debugf("parsed %d orders", len(o))
+				orders = append(orders, o...)
+			} else {
+				g.Logger.Errorf("got bad order: %s", err)
+			}
+			if batch.Offset+int64(len(batch.Records)) >= batch.Total {
+				return
+			}
+		case <-ctx.Done():
+			return orders, ctx.Err()
+		}
+	}
+}
+
+func (g *SpotV4) SubOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
+	id := time.Now().Unix()
+	client := new(PrivateWebsocketClient).Init(g.wsHost, g.wsPath, g.Key, g.Secret, g.Logger)
+	client.SetHandler(
+		func() {
+			client.SubOrder(id, []string{symbol})
+		},
+		client.SubOrderHandler(responseHandler),
+	)
+	client.Connect(true)
+}
+
+func (g *SpotV4) UnsubOrder(symbol, clientId string) {
+	client := new(PrivateWebsocketClient).Init(g.wsHost, g.wsPath, g.Key, g.Secret, g.Logger)
+	id := time.Now().Unix()
+	client.UnsubOrder(id, []string{symbol})
+}
 
 func (g *SpotV4) ReqBalance(ctx context.Context, currencies []string) {
 
