@@ -467,6 +467,7 @@ func (c *PrivateWebsocketClient) ReqOrderHandler(handler base.ResponseHandler) b
 	}
 }
 
+// client handler got a exchange.Order as response if everything's ok
 func (c *PrivateWebsocketClient) SubOrderHandler(handler exchange.ResponseHandler) base.ResponseHandler {
 	return func(response interface{}) {
 		c.Logger.Debugf("order update: %v", response)

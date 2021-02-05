@@ -408,13 +408,13 @@ func (g *SpotV4) sellFromOrderBook(ctx context.Context, symbol exchange.Symbol, 
 	return g.SellLimit(ctx, symbol.Symbol, clientOrderId, price, amount)
 }
 
-func (g *SpotV4) SubscribeOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
-	g.SubOrder(symbol, clientId, responseHandler)
+func (g *SpotV4) SubscribeOrder(ctx context.Context, symbol, clientId string, responseHandler exchange.ResponseHandler) {
+	g.SubOrder(ctx, symbol, clientId, responseHandler)
 }
 
-func (g *SpotV4) UnsubscribeOrder(symbol, clientId string) {
-	g.UnsubOrder(symbol, clientId)
-}
+//func (g *SpotV4) UnsubscribeOrder(symbol, clientId string) {
+//	g.UnsubOrder(symbol, clientId)
+//}
 
 func (g *SpotV4) SubscribeCandlestick(symbol, clientId string, period time.Duration, responseHandler exchange.ResponseHandler) {
 	g.SubCandlestick(symbol, clientId, period, responseHandler)
@@ -736,7 +736,8 @@ func (g *SpotV4) ReqOrder(ctx context.Context, symbol, clientId string) (orders 
 	}
 }
 
-func (g *SpotV4) SubOrder(symbol, clientId string, responseHandler exchange.ResponseHandler) {
+// TODO: 应该改造为使用context，当context取消时，自动退出订阅
+func (g *SpotV4) SubOrder(ctx context.Context, symbol, clientId string, responseHandler exchange.ResponseHandler) {
 	id := time.Now().Unix()
 	client := new(PrivateWebsocketClient).Init(g.wsHost, g.wsPath, g.Key, g.Secret, g.Logger)
 	client.SetHandler(
@@ -746,13 +747,15 @@ func (g *SpotV4) SubOrder(symbol, clientId string, responseHandler exchange.Resp
 		client.SubOrderHandler(responseHandler),
 	)
 	client.Connect(true)
-}
-
-func (g *SpotV4) UnsubOrder(symbol, clientId string) {
-	client := new(PrivateWebsocketClient).Init(g.wsHost, g.wsPath, g.Key, g.Secret, g.Logger)
-	id := time.Now().Unix()
+	<-ctx.Done()
 	client.UnsubOrder(id, []string{symbol})
 }
+
+//func (g *SpotV4) UnsubOrder(symbol, clientId string) {
+//	client := new(PrivateWebsocketClient).Init(g.wsHost, g.wsPath, g.Key, g.Secret, g.Logger)
+//	id := time.Now().Unix()
+//	client.UnsubOrder(id, []string{symbol})
+//}
 
 func (g *SpotV4) ReqBalance(ctx context.Context, currencies []string) {
 
