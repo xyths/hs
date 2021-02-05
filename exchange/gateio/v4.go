@@ -29,7 +29,7 @@ type SpotV4 struct {
 
 func NewSpotV4(key, secret, host string, logger *zap.SugaredLogger) *SpotV4 {
 	client := gateapi.NewAPIClient(gateapi.NewConfiguration())
-	return &SpotV4{Key: key, Secret: secret, client: client, wsHost: host, wsPath: "v4", Logger: logger}
+	return &SpotV4{Key: key, Secret: secret, client: client, wsHost: host, wsPath: "/v4", Logger: logger}
 }
 
 // class function layout
