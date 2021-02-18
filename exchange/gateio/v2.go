@@ -539,7 +539,7 @@ func (g *V2) OpenOrders() ([]exchange.Order, error) {
 		}
 		orders = append(orders, o)
 	}
-	return nil, nil
+	return orders, nil
 }
 
 // 获取我的24小时内成交记录
