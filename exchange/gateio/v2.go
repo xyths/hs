@@ -516,11 +516,30 @@ func (g *V2) IsFullFilled(symbol string, orderId uint64) (order exchange.Order, 
 }
 
 // Get my open order list
-func (g *V2) OpenOrders() (res ResponseOpenOrders, err error) {
+func (g *V2) OpenOrders() ([]exchange.Order, error) {
 	url := "/private/openOrders"
 	param := ""
-	err = g.request(POST, url, param, &res)
-	return
+	var res ResponseOpenOrders
+	err := g.request(POST, url, param, &res)
+	if err != nil {
+		return nil, err
+	}
+	var orders []exchange.Order
+	for _, raw := range res.Orders {
+		o := exchange.Order{
+			Id:           convert.StrToUint64(raw.OrderNumber),
+			Type:         raw.Type,
+			Symbol:       raw.CurrencyPair,
+			Price:        decimal.NewFromFloat(raw.InitialRate),
+			Amount:       decimal.RequireFromString(raw.InitialAmount),
+			Timestamp:    convert.StrToInt64(raw.Timestamp),
+			Status:       raw.Status,
+			FilledPrice:  decimal.RequireFromString(raw.FilledRate),
+			FilledAmount: decimal.RequireFromString(raw.FilledAmount),
+		}
+		orders = append(orders, o)
+	}
+	return nil, nil
 }
 
 // 获取我的24小时内成交记录

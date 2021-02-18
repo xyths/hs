@@ -113,10 +113,10 @@ type RawOrderInOpenOrders struct {
 	Status        string // 记录状态 DONE:完成; CANCEL:取消; REQUEST:请求中
 	CurrencyPair  string
 	Type          string
-	Rate          int64  // 价格
+	Rate          float64  // 价格
 	Amount        string // 买卖数量
 	Total         string
-	InitialRate   int64  // 下单价格
+	InitialRate   float64  // 下单价格
 	InitialAmount string // 下单数量
 	FilledRate    string // 成交价格
 	FilledAmount  string // 成交数量
