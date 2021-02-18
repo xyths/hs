@@ -109,7 +109,7 @@ type ResponseGetOrder struct {
 }
 
 type RawOrderInOpenOrders struct {
-	OrderNumber   string
+	OrderNumber   uint64
 	Status        string // 记录状态 DONE:完成; CANCEL:取消; REQUEST:请求中
 	CurrencyPair  string
 	Type          string

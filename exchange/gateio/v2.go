@@ -527,7 +527,7 @@ func (g *V2) OpenOrders() ([]exchange.Order, error) {
 	var orders []exchange.Order
 	for _, raw := range res.Orders {
 		o := exchange.Order{
-			Id:           convert.StrToUint64(raw.OrderNumber),
+			Id:           raw.OrderNumber,
 			Type:         raw.Type,
 			Symbol:       raw.CurrencyPair,
 			Price:        decimal.NewFromFloat(raw.InitialRate),
