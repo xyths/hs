@@ -120,7 +120,7 @@ type RawOrderInOpenOrders struct {
 	InitialAmount string // 下单数量
 	FilledRate    string // 成交价格
 	FilledAmount  string // 成交数量
-	Timestamp     string
+	Timestamp     int64
 }
 
 type ResponseOpenOrders struct {
