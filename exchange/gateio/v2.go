@@ -530,7 +530,7 @@ func (g *V2) OpenOrders() ([]exchange.Order, error) {
 			Id:           raw.OrderNumber,
 			Type:         raw.Type,
 			Symbol:       raw.CurrencyPair,
-			Price:        decimal.NewFromFloat(raw.InitialRate),
+			Price:        decimal.RequireFromString(raw.InitialRate),
 			Amount:       decimal.RequireFromString(raw.InitialAmount),
 			Timestamp:    convert.StrToInt64(raw.Timestamp),
 			Status:       raw.Status,
