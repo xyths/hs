@@ -35,7 +35,6 @@ type V2 struct {
 	Logger *zap.SugaredLogger
 }
 
-
 func NewV2(key, secret, host string, logger *zap.SugaredLogger) *V2 {
 	g := &V2{Key: key, Secret: secret, wsPath: WsPathV4, Logger: logger}
 	if host == "" {
@@ -311,6 +310,50 @@ func (g *V2) SpotAvailableBalance() (map[string]decimal.Decimal, error) {
 			balance[k] = ob.Add(b)
 		} else {
 			balance[k] = b
+		}
+	}
+	return balance, nil
+}
+
+// Get spot balances in details
+func (g *V2) SpotBalanceDetail() (map[string]exchange.Balance, error) {
+	url := "/private/balances"
+	param := ""
+	data, err := g.httpDo(POST, url, param)
+	if err != nil {
+		return nil, err
+	}
+	var result ResponseBalances
+	if err = json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+	balance := make(map[string]exchange.Balance)
+	for k, v := range result.Available {
+		b := decimal.RequireFromString(v)
+		if b.IsZero() {
+			continue
+		}
+		if _, ok := balance[k]; ok {
+			balance[k].Available.Add(b)
+		} else {
+			balance[k] = exchange.Balance{
+				Currency:  k,
+				Available: b,
+			}
+		}
+	}
+	for k, v := range result.Locked {
+		b := decimal.RequireFromString(v)
+		if b.IsZero() {
+			continue
+		}
+		if _, ok := balance[k]; ok {
+			balance[k].Locked.Add(b)
+		} else {
+			balance[k] = exchange.Balance{
+				Currency: k,
+				Locked:   b,
+			}
 		}
 	}
 	return balance, nil
