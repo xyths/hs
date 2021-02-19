@@ -45,6 +45,7 @@ type Trade struct {
 	Id          uint64          `json:"id"`    // Id should be uint64
 	Order       uint64          `json:"order"` // order id
 	Symbol      string          `json:"symbol"`
+	Type        string          `json:"type"`
 	Price       decimal.Decimal `json:"price"`
 	Amount      decimal.Decimal `json:"amount"`
 	FeeCurrency string          `json:"feeCurrency,omitempty"`

@@ -557,6 +557,7 @@ func (g *V2) MyTradeHistory(currencyPair string) ([]exchange.Trade, error) {
 			Id:     r.TradeId,
 			Order:  r.OrderNumber,
 			Symbol: r.Pair,
+			Type:   r.Type,
 			Price:  decimal.RequireFromString(r.Rate),
 			Amount: decimal.RequireFromString(r.Amount),
 			Time:   time.Unix(r.TimeUnix, 0),
