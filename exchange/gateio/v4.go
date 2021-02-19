@@ -359,7 +359,7 @@ func (g *SpotV4) placeOrder(ctx context.Context, symbol string, price, amount de
 		Symbol:        r.CurrencyPair,
 		Price:         decimal.RequireFromString(r.Price),
 		Amount:        decimal.RequireFromString(r.Amount),
-		Timestamp:     convert.StrToInt64(r.CreateTime),
+		Time:          time.Unix(convert.StrToInt64(r.CreateTime), 0),
 		Status:        r.Status,
 	}
 	return o, err

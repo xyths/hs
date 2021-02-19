@@ -107,7 +107,7 @@ func parseOrdersQuery(records []WsOrderRecord) (orders []exchange.Order, err err
 			Symbol:        r.Market,
 			Price:         decimal.RequireFromString(r.Price),
 			Amount:        decimal.RequireFromString(r.Amount),
-			Timestamp:     int64(r.CTime),
+			Time:          time.Unix(int64(r.CTime), 0),
 			//Status:
 			FilledAmount: decimal.RequireFromString(r.FilledAmount),
 		})
@@ -149,7 +149,7 @@ func parseOrderUpdate(params []interface{}) (exchange.Order, error) {
 	o.Symbol = r.Market
 	o.Price = decimal.RequireFromString(r.Price)
 	o.Amount = decimal.RequireFromString(r.Amount)
-	o.Timestamp = int64(r.CTime)
+	o.Time = time.Unix(int64(r.CTime), 0)
 	o.FilledAmount = decimal.RequireFromString(r.FilledAmount)
 	// event type,Integer, 1: PUT, 2: UPDATE, 3: FINISH
 	switch event {
@@ -245,7 +245,7 @@ func convertOrder(o gateapi.Order) exchange.Order {
 		Symbol:        o.CurrencyPair,
 		Price:         decimal.RequireFromString(o.Price),
 		Amount:        decimal.RequireFromString(o.Amount),
-		Timestamp:     convert.StrToInt64(o.CreateTime),
+		Time:          time.Unix(convert.StrToInt64(o.CreateTime), 0),
 		Status:        o.Status,
 	}
 }

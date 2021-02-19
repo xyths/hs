@@ -501,7 +501,7 @@ func (g *V2) GetOrder(orderId uint64, symbol string) (order exchange.Order, err 
 	order.FilledAmount = decimal.RequireFromString(o.FilledAmount)
 	//order.FeePercentage = o.FeePercentage
 	//order.FeeValue = decimal.RequireFromString(o.FeeValue)
-	order.Timestamp = o.Timestamp
+	order.Time = time.Unix(o.Timestamp, 0)
 
 	return
 }
@@ -532,7 +532,7 @@ func (g *V2) OpenOrders() ([]exchange.Order, error) {
 			Symbol:       raw.CurrencyPair,
 			Price:        decimal.RequireFromString(raw.InitialRate),
 			Amount:       decimal.RequireFromString(raw.InitialAmount),
-			Timestamp:    raw.Timestamp,
+			Time:         time.Unix(raw.Timestamp, 0),
 			Status:       raw.Status,
 			FilledPrice:  decimal.RequireFromString(raw.FilledRate),
 			FilledAmount: decimal.RequireFromString(raw.FilledAmount),

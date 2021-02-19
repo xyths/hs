@@ -385,7 +385,7 @@ func (c *Client) GetOrderById(orderId uint64, _ string) (exchange.Order, error) 
 		Symbol:        d.Symbol,
 		Price:         decimal.RequireFromString(d.Price),
 		Amount:        decimal.RequireFromString(d.Amount),
-		Timestamp:     d.CreatedAt,
+		Time:          d.CreatedAt,
 		Status:        d.State,
 		FilledAmount:  decimal.RequireFromString(d.FilledAmount),
 	}

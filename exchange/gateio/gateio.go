@@ -527,7 +527,7 @@ func (g *GateIO) GetOrder(orderId uint64, symbol string) (order exchange.Order, 
 	order.FilledAmount = decimal.RequireFromString(o.FilledAmount)
 	//order.FeePercentage = o.FeePercentage
 	//order.FeeValue = decimal.RequireFromString(o.FeeValue)
-	order.Timestamp = o.Timestamp
+	order.Time = time.Unix(o.Timestamp, 0)
 
 	return
 }

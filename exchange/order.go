@@ -23,31 +23,31 @@ const (
 
 // Order is common order type between all exchanges, use for exchange interface
 type Order struct {
-	Id            uint64 // Id should be uint64
-	ClientOrderId string `bson:"clientOrderId"`
+	Id            uint64 `json:"id"` // Id should be uint64
+	ClientOrderId string `json:"clientOrderId" bson:"clientOrderId"`
 
 	// gate: limit
 	// huobi:
-	Type      string
-	Symbol    string
-	Price     decimal.Decimal
-	Amount    decimal.Decimal
-	Timestamp int64
+	Type   string          `json:"type"`
+	Symbol string          `json:"symbol"`
+	Price  decimal.Decimal `json:"price"`
+	Amount decimal.Decimal `json:"amount"`
+	Time   time.Time       `json:"time"`
 
-	Status string
+	Status string `json:"status"`
 
-	FilledPrice  decimal.Decimal
-	FilledAmount decimal.Decimal
-	Trades       []Trade
+	FilledPrice  decimal.Decimal `json:"filledPrice"`
+	FilledAmount decimal.Decimal `json:"filledAmount"`
+	Trades       []Trade         `json:"trades,omitempty"`
 }
 
 type Trade struct {
-	Id          uint64 // Id should be uint64
-	Order       uint64 // order id
-	Symbol      string
-	Price       decimal.Decimal
-	Amount      decimal.Decimal
-	FeeCurrency string
-	FeeAmount   decimal.Decimal
-	Time        time.Time
+	Id          uint64          `json:"id"`    // Id should be uint64
+	Order       uint64          `json:"order"` // order id
+	Symbol      string          `json:"symbol"`
+	Price       decimal.Decimal `json:"price"`
+	Amount      decimal.Decimal `json:"amount"`
+	FeeCurrency string          `json:"feeCurrency,omitempty"`
+	FeeAmount   decimal.Decimal `json:"feeAmount,omitempty"`
+	Time        time.Time       `json:"time"`
 }
