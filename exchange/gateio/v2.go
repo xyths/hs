@@ -546,7 +546,11 @@ func (g *V2) OpenOrders() ([]exchange.Order, error) {
 func (g *V2) MyTradeHistory(symbol string, orderId uint64) ([]exchange.Trade, error) {
 	method := "POST"
 	url := "/private/TradeHistory"
-	param := fmt.Sprintf("orderNumber=%d&currencyPair=%s", orderId, symbol)
+	order := ""
+	if orderId != 0 {
+		order = fmt.Sprintf("%d", orderId)
+	}
+	param := fmt.Sprintf("orderNumber=%s&currencyPair=%s", order, symbol)
 	var result MyTradeHistoryResult
 	if err := g.request(method, url, param, &result); err != nil {
 		return nil, err
