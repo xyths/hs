@@ -543,10 +543,10 @@ func (g *V2) OpenOrders() ([]exchange.Order, error) {
 }
 
 // 获取我的24小时内成交记录
-func (g *V2) MyTradeHistory(currencyPair string) ([]exchange.Trade, error) {
+func (g *V2) MyTradeHistory(symbol string, orderId uint64) ([]exchange.Trade, error) {
 	method := "POST"
 	url := "/private/TradeHistory"
-	param := "orderNumber=&currencyPair=" + currencyPair
+	param := fmt.Sprintf("orderNumber=%d&currencyPair=%s", orderId, symbol)
 	var result MyTradeHistoryResult
 	if err := g.request(method, url, param, &result); err != nil {
 		return nil, err
