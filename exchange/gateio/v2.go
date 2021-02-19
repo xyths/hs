@@ -543,16 +543,27 @@ func (g *V2) OpenOrders() ([]exchange.Order, error) {
 }
 
 // 获取我的24小时内成交记录
-func (g *V2) MyTradeHistory(currencyPair string) (*MyTradeHistoryResult, error) {
+func (g *V2) MyTradeHistory(currencyPair string) ([]exchange.Trade, error) {
 	method := "POST"
 	url := "/private/TradeHistory"
 	param := "orderNumber=&currencyPair=" + currencyPair
 	var result MyTradeHistoryResult
 	if err := g.request(method, url, param, &result); err != nil {
 		return nil, err
-	} else {
-		return &result, nil
 	}
+	var trades []exchange.Trade
+	for _, r := range result.Trades {
+		t := exchange.Trade{
+			Id:     r.TradeId,
+			Order:  r.OrderNumber,
+			Symbol: r.Pair,
+			Price:  decimal.RequireFromString(r.Rate),
+			Amount: decimal.RequireFromString(r.Amount),
+			Time:   time.Unix(r.TimeUnix, 0),
+		}
+		trades = append(trades, t)
+	}
+	return trades, nil
 }
 
 // Get my last 24h trades

@@ -1,6 +1,9 @@
 package exchange
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/shopspring/decimal"
+	"time"
+)
 
 type OrderType = int
 
@@ -40,8 +43,11 @@ type Order struct {
 
 type Trade struct {
 	Id          uint64 // Id should be uint64
+	Order       uint64 // order id
+	Symbol      string
 	Price       decimal.Decimal
 	Amount      decimal.Decimal
 	FeeCurrency string
 	FeeAmount   decimal.Decimal
+	Time        time.Time
 }
