@@ -318,7 +318,10 @@ func (g *SpotV4) CancelAllOrders(ctx context.Context, symbol string) ([]exchange
 
 // my trades history
 func (g *SpotV4) MyTrades(ctx context.Context, symbol, orderId string) ([]exchange.Trade, error) {
-	opts := gateapi.ListMyTradesOpts{OrderId: optional.NewString(orderId)}
+	opts := gateapi.ListMyTradesOpts{}
+	if orderId != "" {
+		opts.OrderId = optional.NewString(orderId)
+	}
 	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
 		Key:    g.Key,
 		Secret: g.Secret,
