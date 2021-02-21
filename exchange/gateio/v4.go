@@ -155,7 +155,11 @@ func (g *SpotV4) GetSymbol(ctx context.Context, symbol string) (s exchange.Symbo
 
 // Balance returns account balances
 func (g *SpotV4) Balance(ctx context.Context) ([]exchange.Balance, error) {
-	spot, _, err := g.client.SpotApi.ListSpotAccounts(ctx, nil)
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	spot, _, err := g.client.SpotApi.ListSpotAccounts(ctx2, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +181,11 @@ func (g *SpotV4) Balance(ctx context.Context) ([]exchange.Balance, error) {
 
 // AvailableBalance returns account available balances
 func (g *SpotV4) AvailableBalance(ctx context.Context) (map[string]decimal.Decimal, error) {
-	all, err := g.Balance(ctx)
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	all, err := g.Balance(ctx2)
 	if err != nil {
 		return nil, err
 	}
@@ -193,29 +201,49 @@ func (g *SpotV4) AvailableBalance(ctx context.Context) (map[string]decimal.Decim
 
 // 订单类型("gtc"：普通订单（默认）；“ioc”：立即执行否则取消订单（Immediate-Or-Cancel，IOC）；"poc":被动委托（只挂单，不吃单）（Pending-Or-Cancelled，POC）)
 func (g *SpotV4) BuyLimit(ctx context.Context, symbol, clientOrderId string, price, amount decimal.Decimal) (exchange.Order, error) {
-	return g.placeOrder(ctx, symbol, price, amount, "buy", OrderTypeGTC, clientOrderId)
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	return g.placeOrder(ctx2, symbol, price, amount, "buy", OrderTypeGTC, clientOrderId)
 }
 
 // Place order sell
 func (g *SpotV4) SellLimit(ctx context.Context, symbol, text string, price, amount decimal.Decimal) (exchange.Order, error) {
-	return g.placeOrder(ctx, symbol, price, amount, "sell", OrderTypeGTC, text)
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	return g.placeOrder(ctx2, symbol, price, amount, "sell", OrderTypeGTC, text)
 }
 
 // BuyMarket use Ticker's last price to place order.
 // may can't fill when big bull
 func (g *SpotV4) BuyMarket(ctx context.Context, symbol exchange.Symbol, clientOrderId string, total decimal.Decimal) (exchange.Order, error) {
-	return g.buyFromOrderBook(ctx, symbol, clientOrderId, total)
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	return g.buyFromOrderBook(ctx2, symbol, clientOrderId, total)
 }
 
 // SellMarket use Ticker's last price to place order.
 // may can't fill when big bear
 func (g *SpotV4) SellMarket(ctx context.Context, symbol exchange.Symbol, clientOrderId string, amount decimal.Decimal) (exchange.Order, error) {
-	return g.sellFromOrderBook(ctx, symbol, clientOrderId, amount)
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	return g.sellFromOrderBook(ctx2, symbol, clientOrderId, amount)
 }
 
 // list all orders by status (open, finished)
 func (g *SpotV4) ListOrders(ctx context.Context, symbol, status string) ([]exchange.Order, error) {
-	orders, _, err := g.client.SpotApi.ListOrders(ctx, symbol, status, &gateapi.ListOrdersOpts{})
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	orders, _, err := g.client.SpotApi.ListOrders(ctx2, symbol, status, &gateapi.ListOrdersOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -228,11 +256,19 @@ func (g *SpotV4) ListOrders(ctx context.Context, symbol, status string) ([]excha
 
 // list open orders by symbol
 func (g *SpotV4) ListOpenOrders(ctx context.Context, symbol string) ([]exchange.Order, error) {
-	return g.ListOrders(ctx, symbol, "open")
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	return g.ListOrders(ctx2, symbol, "open")
 }
 
 func (g *SpotV4) GetOrder(ctx context.Context, symbol string, orderId uint64) (exchange.Order, error) {
-	raw, _, err := g.client.SpotApi.GetOrder(ctx, symbol, fmt.Sprintf("%d", orderId))
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	raw, _, err := g.client.SpotApi.GetOrder(ctx2, symbol, fmt.Sprintf("%d", orderId))
 	if err != nil {
 		return exchange.Order{}, err
 	}
@@ -252,7 +288,11 @@ func (g *SpotV4) IsFullFilled(ctx context.Context, symbol string, orderId uint64
 
 // Cancel order
 func (g *SpotV4) CancelOrder(ctx context.Context, symbol string, orderId uint64) (exchange.Order, error) {
-	raw, _, err := g.client.SpotApi.CancelOrder(ctx, symbol, fmt.Sprintf("%d", orderId))
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	raw, _, err := g.client.SpotApi.CancelOrder(ctx2, symbol, fmt.Sprintf("%d", orderId))
 	if err != nil {
 		return exchange.Order{}, err
 	}
@@ -261,7 +301,11 @@ func (g *SpotV4) CancelOrder(ctx context.Context, symbol string, orderId uint64)
 
 // cancel all orders
 func (g *SpotV4) CancelAllOrders(ctx context.Context, symbol string) ([]exchange.Order, error) {
-	rawOrders, _, err := g.client.SpotApi.CancelOrders(ctx, symbol, &gateapi.CancelOrdersOpts{Account: optional.NewString("spot")})
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	rawOrders, _, err := g.client.SpotApi.CancelOrders(ctx2, symbol, &gateapi.CancelOrdersOpts{Account: optional.NewString("spot")})
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +319,11 @@ func (g *SpotV4) CancelAllOrders(ctx context.Context, symbol string) ([]exchange
 // my trades history
 func (g *SpotV4) MyTrades(ctx context.Context, symbol, orderId string) ([]exchange.Trade, error) {
 	opts := gateapi.ListMyTradesOpts{OrderId: optional.NewString(orderId)}
-	rawTrades, _, err := g.client.SpotApi.ListMyTrades(ctx, symbol, &opts)
+	ctx2 := context.WithValue(ctx, gateapi.ContextGateAPIV4, gateapi.GateAPIV4{
+		Key:    g.Key,
+		Secret: g.Secret,
+	})
+	rawTrades, _, err := g.client.SpotApi.ListMyTrades(ctx2, symbol, &opts)
 	if err != nil {
 		return nil, err
 	}
