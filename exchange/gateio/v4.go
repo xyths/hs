@@ -411,7 +411,7 @@ func (g *SpotV4) placeOrder(ctx context.Context, symbol string, price, amount de
 		Amount:       amount.String(),
 		Side:         side,
 		TimeInForce:  orderType,
-		Text:         text,
+		Text:         fmt.Sprintf("t-%s", text),
 	}
 	r, _, err := g.client.SpotApi.CreateOrder(ctx, orderRequest)
 	if err != nil {
