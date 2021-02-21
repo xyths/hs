@@ -558,13 +558,13 @@ func (g *V2) MyTradeHistory(symbol string, orderId uint64) ([]exchange.Trade, er
 	var trades []exchange.Trade
 	for _, r := range result.Trades {
 		t := exchange.Trade{
-			Id:     r.TradeId,
-			Order:  r.OrderNumber,
-			Symbol: r.Pair,
-			Type:   r.Type,
-			Price:  decimal.RequireFromString(r.Rate),
-			Amount: decimal.RequireFromString(r.Amount),
-			Time:   time.Unix(r.TimeUnix, 0),
+			Id:      r.TradeId,
+			OrderId: r.OrderNumber,
+			Symbol:  r.Pair,
+			Type:    r.Type,
+			Price:   decimal.RequireFromString(r.Rate),
+			Amount:  decimal.RequireFromString(r.Amount),
+			Time:    time.Unix(r.TimeUnix, 0),
 		}
 		trades = append(trades, t)
 	}

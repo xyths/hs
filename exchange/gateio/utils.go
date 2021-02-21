@@ -279,3 +279,18 @@ func convertOrderBook(ob gateapi.OrderBook) exchange.OrderBook {
 	}
 	return cob
 }
+
+func convertTrade(t gateapi.Trade) exchange.Trade {
+	return exchange.Trade{
+		Id:      convert.StrToUint64(t.Id),
+		OrderId: convert.StrToUint64(t.OrderId),
+		//Symbol:        t.CurrencyPair,
+		Side:        t.Side,
+		Role:        t.Role,
+		Price:       decimal.RequireFromString(t.Price),
+		Amount:      decimal.RequireFromString(t.Amount),
+		Time:        time.Unix(convert.StrToInt64(t.CreateTime), 0),
+		FeeCurrency: t.FeeCurrency,
+		FeeAmount:   decimal.RequireFromString(t.Fee),
+	}
+}

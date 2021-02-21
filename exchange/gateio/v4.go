@@ -272,6 +272,20 @@ func (g *SpotV4) CancelAllOrders(ctx context.Context, symbol string) ([]exchange
 	return orders, nil
 }
 
+// my trades history
+func (g *SpotV4) MyTrades(ctx context.Context, symbol, orderId string) ([]exchange.Trade, error) {
+	opts := gateapi.ListMyTradesOpts{OrderId: optional.NewString(orderId)}
+	rawTrades, _, err := g.client.SpotApi.ListMyTrades(ctx, symbol, &opts)
+	if err != nil {
+		return nil, err
+	}
+	var trades []exchange.Trade
+	for _, trade := range rawTrades {
+		trades = append(trades, convertTrade(trade))
+	}
+	return trades, nil
+}
+
 // tickers
 func (g *SpotV4) Tickers(ctx context.Context) ([]exchange.Ticker, error) {
 	rawList, _, err := g.client.SpotApi.ListTickers(ctx, &gateapi.ListTickersOpts{})
