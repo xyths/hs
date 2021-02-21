@@ -292,7 +292,7 @@ func (g *SpotV4) CancelOrder(ctx context.Context, symbol string, orderId uint64)
 		Key:    g.Key,
 		Secret: g.Secret,
 	})
-	raw, _, err := g.client.SpotApi.CancelOrder(ctx2, symbol, fmt.Sprintf("%d", orderId))
+	raw, _, err := g.client.SpotApi.CancelOrder(ctx2, fmt.Sprintf("%d", orderId), symbol)
 	if err != nil {
 		return exchange.Order{}, err
 	}
