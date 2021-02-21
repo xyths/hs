@@ -414,6 +414,9 @@ func (g *SpotV4) placeOrder(ctx context.Context, symbol string, price, amount de
 		Text:         text,
 	}
 	r, _, err := g.client.SpotApi.CreateOrder(ctx, orderRequest)
+	if err != nil {
+		return exchange.Order{}, err
+	}
 	o := exchange.Order{
 		Id:            convert.StrToUint64(r.Id),
 		ClientOrderId: r.Text,
