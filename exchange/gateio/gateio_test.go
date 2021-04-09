@@ -15,6 +15,7 @@ import (
 
 var g *GateIO
 var g4 *SpotV4
+var futures *Futures
 
 func TestMain(m *testing.M) {
 	l, err := hs.NewZapLogger(hs.LogConf{
@@ -37,6 +38,8 @@ func TestMain(m *testing.M) {
 	g = New(apiKey, secretKey, host, l.Sugar())
 
 	g4 = NewSpotV4(v4apiKey, v4secretKey, host, l.Sugar())
+
+	futures = NewFutures(v4apiKey, v4secretKey, host, l.Sugar())
 	os.Exit(m.Run())
 }
 

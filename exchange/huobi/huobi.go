@@ -385,9 +385,10 @@ func (c *Client) GetOrderById(orderId uint64, _ string) (exchange.Order, error) 
 		Symbol:        d.Symbol,
 		Price:         decimal.RequireFromString(d.Price),
 		Amount:        decimal.RequireFromString(d.Amount),
-		Time:          d.CreatedAt,
-		Status:        d.State,
-		FilledAmount:  decimal.RequireFromString(d.FilledAmount),
+		// for huobi, CreatedAt is ms
+		Time:         time.Unix(d.CreatedAt/1000, d.CreatedAt%1000),
+		Status:       d.State,
+		FilledAmount: decimal.RequireFromString(d.FilledAmount),
 	}
 	return o, nil
 }

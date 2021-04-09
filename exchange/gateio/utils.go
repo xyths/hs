@@ -209,7 +209,7 @@ func takeBids(bids []Quote, amount decimal.Decimal, pricePrecision, amountPrecis
 }
 
 // getInterval convert duration to gate candle period
-// use in V4 API
+// use in V4 API, spot and futures
 func getInterval(period time.Duration) string {
 	switch period {
 	case time.Second * 10:
@@ -293,4 +293,126 @@ func convertTrade(t gateapi.Trade) exchange.Trade {
 		FeeCurrency: t.FeeCurrency,
 		FeeAmount:   decimal.RequireFromString(t.Fee),
 	}
+}
+
+func convertContract(c gateapi.Contract) exchange.Contract {
+	return exchange.Contract{
+		Name:              c.Name,
+		Type:              c.Type,
+		QuoteMultiplier:   c.QuantoMultiplier,
+		LeverageMax:       c.LeverageMax,
+		LeverageMin:       c.LeverageMin,
+		MaintenanceRate:   c.MaintenanceRate,
+		MarkType:          c.MarkType,
+		MarkPrice:         c.MarkPrice,
+		IndexPrice:        c.IndexPrice,
+		LastPrice:         c.LastPrice,
+		MakerFeeRate:      c.MakerFeeRate,
+		TakerFeeRate:      c.TakerFeeRate,
+		OrderPriceRound:   c.OrderPriceRound,
+		MarkPriceRound:    c.MarkPriceRound,
+		FundingRate:       c.FundingRate,
+		FundingInterval:   c.FundingInterval,
+		FundingNextApply:  c.FundingNextApply,
+		RiskLimitBase:     c.RiskLimitBase,
+		RiskLimitStep:     c.RiskLimitStep,
+		RiskLimitMax:      c.RiskLimitMax,
+		OrderSizeMax:      c.OrderSizeMax,
+		OrderSizeMin:      c.OrderSizeMin,
+		OrderPriceDeviate: c.OrderPriceDeviate,
+		RefDiscountRate:   c.RefDiscountRate,
+		RefRebateRate:     c.RefRebateRate,
+		OrderbookId:       c.OrderbookId,
+		TradeId:           c.TradeId,
+		TradeSize:         c.TradeSize,
+		PositionSize:      c.PositionSize,
+		ConfigChangeTime:  c.ConfigChangeTime,
+		InDelisting:       c.InDelisting,
+		OrdersLimit:       c.OrdersLimit,
+	}
+}
+
+func convertFutureOrderBook(fob gateapi.FuturesOrderBook) exchange.FuturesOrderbook {
+	cob := exchange.FuturesOrderbook{}
+	for _, ask := range fob.Asks {
+		cob.Asks = append(cob.Asks, exchange.FuturesQuote{Price: convert.StrToFloat64(ask.P), Amount: ask.S})
+	}
+	for _, bid := range fob.Bids {
+		cob.Bids = append(cob.Bids, exchange.FuturesQuote{Price: convert.StrToFloat64(bid.P), Amount: bid.S})
+	}
+	return cob
+}
+
+func convertCommonTrade(t gateapi.FuturesTrade) exchange.FuturesTrade {
+	return exchange.FuturesTrade{
+		Id:         uint64(t.Id),
+		CreateTime: time.Unix(int64(t.CreateTime), 0),
+		Contract:   t.Contract,
+		Size:       t.Size,
+		Price:      decimal.RequireFromString(t.Price),
+	}
+}
+
+func convertCommonLiquidation(liq gateapi.FuturesLiquidate) exchange.FuturesLiquidation {
+	return exchange.FuturesLiquidation{
+		Time:       time.Unix(liq.Time, 0),
+		Contract:   liq.Contract,
+		Size:       liq.Size,
+		OrderPrice: decimal.RequireFromString(liq.OrderPrice),
+		FillPrice:  decimal.RequireFromString(liq.FillPrice),
+		Left:       liq.Left,
+	}
+}
+
+func convertBalance(account gateapi.FuturesAccount) exchange.FuturesBalance {
+	return exchange.FuturesBalance{
+		Currency:       account.Currency,
+		Available:      decimal.RequireFromString(account.Available),
+		PositionMargin: decimal.RequireFromString(account.PositionMargin),
+		OrderMargin:    decimal.RequireFromString(account.OrderMargin),
+		UnrealisedPnl:  decimal.RequireFromString(account.UnrealisedPnl),
+		Total:          decimal.RequireFromString(account.Total),
+		Dual:           account.InDualMode,
+	}
+}
+
+func convertPosition(p gateapi.Position) exchange.Position {
+	var closeOrder *exchange.PositionCloseOrder
+	if p.CloseOrder.Id > 0 {
+		closeOrder = &exchange.PositionCloseOrder{
+			Id:    p.CloseOrder.Id,
+			Price: decimal.RequireFromString(p.CloseOrder.Price),
+			IsLiq: p.CloseOrder.IsLiq,
+		}
+	}
+	return exchange.Position{
+		User:            p.User,
+		Contract:        p.Contract,
+		Size:            p.Size,
+		Leverage:        int(convert.StrToInt64(p.Leverage)),
+		RiskLimit:       int(convert.StrToInt64(p.RiskLimit)),
+		MaxLeverage:     int(convert.StrToInt64(p.LeverageMax)),
+		MaintenanceRate: convert.StrToFloat64(p.MaintenanceRate),
+		Value:           decimal.RequireFromString(p.Value),
+		Margin:          decimal.RequireFromString(p.Margin),
+		EntryPrice:      decimal.RequireFromString(p.EntryPrice),
+		LiqPrice:        decimal.RequireFromString(p.LiqPrice),
+		MarkPrice:       decimal.RequireFromString(p.MarkPrice),
+		UnrealisedPnl:   decimal.RequireFromString(p.UnrealisedPnl),
+		RealisedPnl:     decimal.RequireFromString(p.RealisedPnl),
+		HistoryPnl:      decimal.RequireFromString(p.HistoryPnl),
+		LastClosePnl:    decimal.RequireFromString(p.LastClosePnl),
+		AdlRanking:      p.AdlRanking,
+		PendingOrders:   p.PendingOrders,
+		CloseOrder:      closeOrder,
+		Mode:            p.Mode,
+	}
+}
+
+func convertDualPosition(positions []gateapi.Position) []exchange.Position {
+	var rets []exchange.Position
+	for _, p := range positions {
+		rets = append(rets, convertPosition(p))
+	}
+	return rets
 }
