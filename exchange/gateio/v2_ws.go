@@ -1,3 +1,5 @@
+// V2 Websocket
+
 package gateio
 
 import (

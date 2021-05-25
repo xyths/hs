@@ -1,3 +1,7 @@
+// V2版本的Gate接口，仅支持现货，仅支持RESTful
+// 支持websocket比较有限，仅复制了一些函数，未经反复测试
+// 此V2会逐步废弃
+
 package gateio
 
 import (
@@ -19,9 +23,6 @@ import (
 	"time"
 )
 
-// V2版本的Gate接口，仅支持现货，仅支持RESTful
-// 支持websocket比较有限，仅复制了一些函数，未经反复测试
-// 此V2会逐步废弃
 type V2 struct {
 	Key    string
 	Secret string

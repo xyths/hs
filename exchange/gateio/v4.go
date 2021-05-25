@@ -90,9 +90,9 @@ func (g *SpotV4) CandleBySize(ctx context.Context, symbol string, period time.Du
 			}
 		}
 		candle.Add(c)
-		if c.Length() < int(options.Limit.Value()) {
-			break
-		}
+		//if c.Length() < int(options.Limit.Value()) {
+		//	break
+		//}
 	}
 	return candle, nil
 }

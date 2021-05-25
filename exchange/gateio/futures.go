@@ -1,3 +1,5 @@
+// V4 Futures RESTful API
+
 package gateio
 
 import (
