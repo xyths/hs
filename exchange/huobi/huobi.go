@@ -60,6 +60,10 @@ func New(label, accessKey, secretKey, host string) (*Client, error) {
 	return c, nil
 }
 
+func (c *Client) Name() string {
+	return "huobi"
+}
+
 func (c *Client) GetTimestamp() (int, error) {
 	hb := new(client.CommonClient).Init(c.Host)
 	return hb.GetTimestamp()

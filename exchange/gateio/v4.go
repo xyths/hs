@@ -48,6 +48,10 @@ func NewSpotV4(key, secret, host string, logger *zap.SugaredLogger) *SpotV4 {
 //      - common
 //      - spot
 
+func (g *SpotV4) Name() string {
+	return "gate"
+}
+
 // list all currencies
 func (g *SpotV4) Currencies(ctx context.Context) ([]gateapi.Currency, error) {
 	currencies, _, err := g.client.SpotApi.ListCurrencies(ctx)
