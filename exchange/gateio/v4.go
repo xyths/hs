@@ -56,7 +56,10 @@ func (g *SpotV4) Currencies(ctx context.Context) ([]gateapi.Currency, error) {
 
 // 获取一定数量的k线
 // 可以用于策略启动时的查询
-func (g *SpotV4) CandleBySize(ctx context.Context, symbol string, period time.Duration, size int) (hs.Candle, error) {
+func (g *SpotV4) CandleBySize(symbol string, period time.Duration, size int) (hs.Candle, error) {
+	return g.CandleBySizeContext(context.Background(), symbol, period, size)
+}
+func (g *SpotV4) CandleBySizeContext(ctx context.Context, symbol string, period time.Duration, size int) (hs.Candle, error) {
 	interval := optional.NewString(getInterval(period))
 	left := size
 	to := time.Now()

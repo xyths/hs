@@ -268,6 +268,10 @@ func (cs CandleSlice) Less(i, j int) bool {
 	return cs[i].Timestamp[0] < cs[j].Timestamp[0]
 }
 
+func (c *Client) CandleBySizeContext(ctx context.Context, symbol string, period time.Duration, size int) (hs.Candle, error) {
+	return c.CandleBySize(symbol, period, size)
+}
+
 func (c *Client) CandleBySize(symbol string, period time.Duration, size int) (hs.Candle, error) {
 	hb := new(client.MarketClient).Init(c.Host)
 	optionalRequest := market.GetCandlestickOptionalRequest{Period: getPeriodString(period), Size: size}
