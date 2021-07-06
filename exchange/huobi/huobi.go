@@ -82,14 +82,14 @@ func (c *Client) AllSymbols(ctx context.Context) (s []exchange.Symbol, err error
 			return s, ctx.Err()
 		default:
 			s[i] = exchange.Symbol{
-				Symbol:          a.Symbol,
-				Disabled:        a.State != "online",
-				BaseCurrency:    a.BaseCurrency,
-				QuoteCurrency:   a.QuoteCurrency,
-				AmountPrecision: int32(a.AmountPrecision),
-				PricePrecision:  int32(a.PricePrecision),
-				MinAmount:       a.MinOrderAmt,
-				MinTotal:        a.MinOrderValue,
+				Symbol:              a.Symbol,
+				Disabled:            a.State != "online",
+				BaseCurrency:        a.BaseCurrency,
+				QuoteCurrency:       a.QuoteCurrency,
+				AmountPrecision:     int32(a.AmountPrecision),
+				PricePrecision:      int32(a.PricePrecision),
+				LimitOrderMinAmount: a.LimitOrderMinOrderAmt,
+				MinTotal:            a.MinOrderValue,
 			}
 		}
 	}
@@ -114,7 +114,7 @@ func (c *Client) GetSymbol(ctx context.Context, symbol string) (s exchange.Symbo
 				s.QuoteCurrency = a.QuoteCurrency
 				s.AmountPrecision = int32(a.AmountPrecision)
 				s.PricePrecision = int32(a.PricePrecision)
-				s.MinAmount = a.MinOrderAmt
+				s.LimitOrderMinAmount = a.LimitOrderMinOrderAmt
 				s.MinTotal = a.MinOrderValue
 				return
 			}

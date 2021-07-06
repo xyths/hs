@@ -39,6 +39,7 @@ const (
 	MXC    = "mxc"
 	OKEx   = "okex"
 	Huobi  = "huobi"
+	Binance = "binance"
 )
 
 type GridStrategyConf struct {

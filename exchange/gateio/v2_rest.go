@@ -73,14 +73,14 @@ func (g *V2) AllSymbols(ctx context.Context) (symbols []exchange.Symbol, err err
 				default:
 					base, quote := cutSymbol(symbol)
 					symbols = append(symbols, exchange.Symbol{
-						Symbol:          symbol,
-						Disabled:        info.TradeDisabled != 0 || info.BuyDisabled != 0 || info.SellDisabled != 0,
-						BaseCurrency:    base,
-						QuoteCurrency:   quote,
-						PricePrecision:  info.PricePrecision,
-						AmountPrecision: info.AmountPrecision,
-						MinAmount:       decimal.NewFromFloat(info.MinAmount),
-						MinTotal:        decimal.NewFromFloat(info.MinAmountB),
+						Symbol:              symbol,
+						Disabled:            info.TradeDisabled != 0 || info.BuyDisabled != 0 || info.SellDisabled != 0,
+						BaseCurrency:        base,
+						QuoteCurrency:       quote,
+						PricePrecision:      info.PricePrecision,
+						AmountPrecision:     info.AmountPrecision,
+						LimitOrderMinAmount: decimal.NewFromFloat(info.MinAmount),
+						MinTotal:            decimal.NewFromFloat(info.MinAmountB),
 					})
 				}
 			}

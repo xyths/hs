@@ -93,11 +93,11 @@ func TestGateIO_GetSymbol(t *testing.T) {
 	//g := New(apiKey, secretKey, host)
 
 	tests := []exchange.Symbol{
-		{Symbol: "sero_usdt", Disabled: false, BaseCurrency: "SERO", QuoteCurrency: "USDT", PricePrecision: 5, AmountPrecision: 3, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
-		{Symbol: "btc_usdt", BaseCurrency: "BTC", QuoteCurrency: "USDT", PricePrecision: 2, AmountPrecision: 4, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
-		{Symbol: "btc3l_usdt", BaseCurrency: "BTC3L", QuoteCurrency: "USDT", PricePrecision: 4, AmountPrecision: 3, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
-		{Symbol: "btc3s_usdt", BaseCurrency: "BTC3S", QuoteCurrency: "USDT", PricePrecision: 4, AmountPrecision: 3, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
-		{Symbol: "ampl_usdt", BaseCurrency: "AMPL", QuoteCurrency: "USDT", PricePrecision: 3, AmountPrecision: 4, MinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "sero_usdt", Disabled: false, BaseCurrency: "SERO", QuoteCurrency: "USDT", PricePrecision: 5, AmountPrecision: 3, LimitOrderMinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "btc_usdt", BaseCurrency: "BTC", QuoteCurrency: "USDT", PricePrecision: 2, AmountPrecision: 4, LimitOrderMinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "btc3l_usdt", BaseCurrency: "BTC3L", QuoteCurrency: "USDT", PricePrecision: 4, AmountPrecision: 3, LimitOrderMinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "btc3s_usdt", BaseCurrency: "BTC3S", QuoteCurrency: "USDT", PricePrecision: 4, AmountPrecision: 3, LimitOrderMinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
+		{Symbol: "ampl_usdt", BaseCurrency: "AMPL", QuoteCurrency: "USDT", PricePrecision: 3, AmountPrecision: 4, LimitOrderMinAmount: decimal.NewFromFloat(0.0001), MinTotal: decimal.NewFromFloat(1)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Symbol, func(t *testing.T) {
@@ -115,8 +115,8 @@ func TestGateIO_GetSymbol(t *testing.T) {
 			if tt.AmountPrecision != actual.AmountPrecision {
 				t.Errorf("amount precision expect %d, actual %d", tt.AmountPrecision, actual.AmountPrecision)
 			}
-			if !tt.MinAmount.Equal(actual.MinAmount) {
-				t.Errorf("min amount expect %s, actual %s", tt.MinAmount, actual.MinAmount)
+			if !tt.LimitOrderMinAmount.Equal(actual.LimitOrderMinAmount) {
+				t.Errorf("min amount expect %s, actual %s", tt.LimitOrderMinAmount, actual.LimitOrderMinAmount)
 			}
 			if !tt.MinTotal.Equal(actual.MinTotal) {
 				t.Errorf("min total expect %s, actual %s", tt.MinTotal, actual.MinTotal)

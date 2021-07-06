@@ -115,17 +115,17 @@ func (g *SpotV4) AllSymbols(ctx context.Context) (symbols []exchange.Symbol, err
 			return nil, ctx.Err()
 		default:
 			s := exchange.Symbol{
-				Symbol:          p.Id,
-				Disabled:        p.TradeStatus != "tradable",
-				BaseCurrency:    p.Base,
-				QuoteCurrency:   p.Quote,
-				PricePrecision:  p.Precision,
-				AmountPrecision: p.AmountPrecision,
-				MinAmount:       decimal.Zero,
-				MinTotal:        decimal.Zero,
+				Symbol:              p.Id,
+				Disabled:            p.TradeStatus != "tradable",
+				BaseCurrency:        p.Base,
+				QuoteCurrency:       p.Quote,
+				PricePrecision:      p.Precision,
+				AmountPrecision:     p.AmountPrecision,
+				LimitOrderMinAmount: decimal.Zero,
+				MinTotal:            decimal.Zero,
 			}
 			if ma, err1 := decimal.NewFromString(p.MinBaseAmount); err1 == nil {
-				s.MinAmount = ma
+				s.LimitOrderMinAmount = ma
 			}
 			if mt, err1 := decimal.NewFromString(p.MinQuoteAmount); err1 == nil {
 				s.MinTotal = mt
@@ -148,9 +148,9 @@ func (g *SpotV4) GetSymbol(ctx context.Context, symbol string) (s exchange.Symbo
 	s.PricePrecision = p.Precision
 	s.AmountPrecision = p.AmountPrecision
 	if ma, err1 := decimal.NewFromString(p.MinBaseAmount); err1 == nil {
-		s.MinAmount = ma
+		s.LimitOrderMinAmount = ma
 	} else {
-		s.MinAmount = decimal.Zero
+		s.LimitOrderMinAmount = decimal.Zero
 	}
 	if mt, err1 := decimal.NewFromString(p.MinQuoteAmount); err1 == nil {
 		s.MinTotal = mt
