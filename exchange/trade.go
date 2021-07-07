@@ -20,4 +20,6 @@ const (
 	TradeDirectionSell           = "sell"
 )
 
+// TradeHandler 是订阅交易明细时的处理函数。
+// 参数中的数据是按时间顺序排列，老数据在前，新数据在后，方便遍历和用TA分析。
 type TradeHandler func([]TradeDetail)
