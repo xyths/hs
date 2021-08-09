@@ -69,6 +69,11 @@ type LogConf struct {
 	Errors  []string
 }
 
+type GinConf struct {
+	Listen string // "host:port"
+	Log    string
+}
+
 func ParseJsonConfig(filename string, config interface{}) error {
 	configFile, err := os.Open(filename)
 	defer func() {
