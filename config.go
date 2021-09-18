@@ -35,10 +35,10 @@ type ExchangeConf struct {
 type BroadcastConf = broadcast.Config
 
 const (
-	GateIO = "gate"
-	MXC    = "mxc"
-	OKEx   = "okex"
-	Huobi  = "huobi"
+	GateIO  = "gate"
+	MXC     = "mxc"
+	OKEx    = "okex"
+	Huobi   = "huobi"
 	Binance = "binance"
 )
 
@@ -87,4 +87,10 @@ func ParseJsonConfig(filename string, config interface{}) error {
 		return err
 	}
 	return nil
+}
+
+type TelegramBotConf struct {
+	Name  string // bot username
+	Token string
+	Debug bool
 }
