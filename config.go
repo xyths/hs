@@ -96,5 +96,6 @@ type TelegramBotConf struct {
 }
 
 type QueueConf struct {
+	URI  string `json:"uri"`
 	Name string `json:"name"`
 }
