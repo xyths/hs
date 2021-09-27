@@ -94,3 +94,7 @@ type TelegramBotConf struct {
 	Token string
 	Debug bool
 }
+
+type QueueConf struct {
+	Name string `json:"name"`
+}
