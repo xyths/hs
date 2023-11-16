@@ -12,6 +12,9 @@ func GetWithHeader(ctx context.Context, url string, header map[string]string, re
 	if err != nil {
 		return err
 	}
+	for k, v := range header {
+		req.Header.Add(k, v)
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
